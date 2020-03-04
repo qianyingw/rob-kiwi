@@ -9,18 +9,13 @@ github.com/CSTR-Edinburgh/mlpractical/blob/mlp2019-20/mlp_cluster_tutorial/exper
 
 import os
 import logging
-from tqdm import tqdm
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-
-import utils
 import json
+from tqdm import tqdm
 
+import torch
+import utils
 
-# from utils import save_statistics
-      
+     
 
 def train(model, iterator, criterion, optimizer, metrics):
     
@@ -30,14 +25,19 @@ def train(model, iterator, criterion, optimizer, metrics):
     model.train()
     
     with tqdm(total=len_iter) as progress_bar:
+        
         for batch in iterator:
-            optimizer.zero_grad()
-            # batch.text.shape = [seq_len, batch_size]
-            # batch.text.shape = [batch_size, max_doc_len, max_sent_len]
-            preds = model(batch.text)  # preds.shape = [batch_size, output_dim]
             
-            loss = criterion(preds, batch.label)       
-            epoch_scores = metrics(preds, batch.label)  # dictionary of 5 metric scores
+            batch_doc = batch[0]   # [batch_size, doc_len, embed_dim]
+            batch_label = batch[1]
+            # batch_len = batch[2]
+            
+            optimizer.zero_grad()
+            
+            preds = model(batch_doc)  # preds.shape: [batch_size, output_dim]
+            
+            loss = criterion(preds, batch_label)       
+            epoch_scores = metrics(preds, batch_label)  # dictionary of 5 metric scores
                    
             loss.backward()
             optimizer.step()
@@ -62,11 +62,16 @@ def evaluate(model, iterator, criterion, metrics):
     
     with torch.no_grad():
         with tqdm(total=len_iter) as progress_bar:
-            for batch in iterator:                
-                preds = model(batch.text)
+            for batch in iterator:  
+
+                batch_doc = batch[0]
+                batch_label = batch[1]
+                # batch_len = batch[2]
                 
-                loss = criterion(preds, batch.label)
-                epoch_scores = metrics(preds, batch.label)  # # dictionary of 5 metric scores
+                preds = model(batch_doc)
+                
+                loss = criterion(preds, batch_label)
+                epoch_scores = metrics(preds, batch_label)  # dictionary of 5 metric scores
                 
                 scores['loss'] += loss.item()
                 for key, value in epoch_scores.items():               
@@ -88,8 +93,7 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
         restore_path = os.path.join(exp_dir, restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}...".format(restore_path))  
         utils.load_checkpoint(restore_path, model, optimizer)
-        
-        
+           
     best_valid_f1 = -float('inf')
     best_valid_loss = float('inf')
     
@@ -156,30 +160,3 @@ def test(model, test_iterator, criterion, metrics, exp_dir, restore_file):
     
     return test_scores
 
-
-#def plot_performance(train_df, val_df, png_dir):
-#    # Figure size
-#    plt.figure(figsize=(15,5))
-#
-#    x = np.arange(len(train_df)) + 1
-#    # Plot Loss
-#    plt.subplot(1, 2, 1)
-#    plt.title("Loss")
-#    plt.plot(x, train_df['loss'], label="train", color='C5')
-#    plt.plot(x, val_df['loss'], label="val", color='C5', linestyle='--')
-#    plt.legend(loc='upper right')
-#
-#    # Plot Accuracy
-#    plt.subplot(1, 2, 2)
-#    plt.title("Scores")
-#    plt.plot(x, train_df['accuracy'], label="train_acc", color='C0')
-#    plt.plot(x, val_df['accuracy'], label="val_acc", color='C0', linestyle='--')
-#    plt.plot(x, train_df['f1'], label="train_f1", color='C1')
-#    plt.plot(x, val_df['f1'], label="val_f1", color='C1', linestyle='--')
-#    plt.legend(loc='lower right')
-#
-#    # Save figure
-#    plt.savefig(os.path.join(png_dir, "performance.png"))
-#
-#    # Show plots
-#    # plt.show()

@@ -6,15 +6,6 @@ Created on Thu Oct 31 17:12:41 2019
 @author: qwang
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Define the neural network module and metrics
-
-Created on Fri Oct  4 11:07:31 2019
-@author: qwang
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,11 +13,9 @@ import torch.nn.functional as F
 
 class ConvNet(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, n_filters, filter_sizes, output_dim, dropout, pad_idx):
+    def __init__(self, embedding_dim, n_filters, filter_sizes, output_dim, dropout):
     
         super().__init__()
-        
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = pad_idx)
         self.convs = nn.ModuleList([nn.Conv2d(in_channels = 1,
                                               out_channels = n_filters,
                                               kernel_size = (fsize, embedding_dim)) for fsize in filter_sizes
@@ -35,28 +24,28 @@ class ConvNet(nn.Module):
         self.dropout = nn.Dropout(dropout)
     
     
-    def forward(self, text):
+    def forward(self, doc):
         """
         Params:
-            text: torch tensor, [seq_len, batch_size]            
+            doc: torch tensor, [batch_size, doc_len, embed_dim]            
         Yields:
             out: torch tensor, [batch_size, output_dim]       
             
         """         
-        embed = self.embedding(text)  # [seq_len, batch_size, embedding_dim]
-        embed = embed.permute(1,0,2)  # [batch_size, seq_len, embedding_dim]
-        embed = embed.unsqueeze(1)  # [batch_size, 1, seq_len, embedding_dim]
+
+        embed = doc.unsqueeze(1)  # [batch_size, 1, doc_len, embed_dim]
         
-        conved = [F.relu(conv(embed)) for conv in self.convs]  # [batch_size, n_filters, (seq_len-fsize+1), 1]
-        conved = [conv.squeeze(3) for conv in conved]  # [batch_size, n_filters, (seq_len-fsize+1)]
+        conved = [F.relu(conv(embed)) for conv in self.convs]  # [batch_size, n_filters, (doc_len-fsize+1), 1]
+        conved = [conv.squeeze(3) for conv in conved]  # [batch_size, n_filters, (doc_len-fsize+1)]
         pooled = [F.max_pool1d(conv, conv.shape[2]) for conv in conved]  # [batch_size, n_filters, 1]
         pooled = [pool.squeeze(2) for pool in pooled]  # [batch_size, n_filters]
         
         cat = torch.cat(pooled, dim=1)  # [batch_size, n_filters * len(filter_sizes)]
         dp = self.dropout(cat)
-        out = self.fc(dp)  # # [batch_size, output_dim]
+        out = self.fc(dp)  # [batch_size, output_dim]
         
         return out
+
 
 
 
