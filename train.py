@@ -63,7 +63,7 @@ def evaluate(model, iterator, criterion, metrics):
     with torch.no_grad():
         with tqdm(total=len_iter) as progress_bar:
             for batch in iterator:  
-
+                
                 batch_doc = batch[0]
                 batch_label = batch[1]
                 # batch_len = batch[2]
@@ -78,28 +78,33 @@ def evaluate(model, iterator, criterion, metrics):
                     scores[key] += value                        
                 progress_bar.update(1)
                         
-    for key, value in scores.items():
-        scores[key] = value / len_iter
+        for key, value in scores.items():
+            scores[key] = value / len_iter
     
     return scores
 
 
 
-def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, metrics, args, exp_dir, restore_file=None):
+def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, metrics, args, restore_file=None):
     """
     
     """
+    
+    if os.path.exists(args.exp_dir) == False:
+        os.makedirs(args.exp_dir)     
+    
     if restore_file is not None:
-        restore_path = os.path.join(exp_dir, restore_file + '.pth.tar')
+        restore_path = os.path.join(args.exp_dir, restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}...".format(restore_path))  
         utils.load_checkpoint(restore_path, model, optimizer)
-           
+          
     best_valid_f1 = -float('inf')
     best_valid_loss = float('inf')
     
     # Create args and output dict
-    output_dict = {'args': vars(args),
+    output_dict = {'args': vars(args), 
                    'prfs': {}}
+    
     
     for epoch in range(args.num_epochs):
      
@@ -118,42 +123,43 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
             utils.save_checkpoint({'epoch': epoch+1,
                                    'state_dict': model.state_dict(),
                                    'optim_Dict': optimizer.state_dict()},
-                                   is_best = is_best_loss, checkdir = exp_dir)
+                                   is_best = is_best_loss, checkdir = args.exp_dir)
         if args.save_model == 'f1':
             utils.save_checkpoint({'epoch': epoch+1,
                                    'state_dict': model.state_dict(),
                                    'optim_Dict': optimizer.state_dict()},
-                                   is_best = is_best_f1, checkdir = exp_dir)
+                                   is_best = is_best_f1, checkdir = args.exp_dir)
         
         if is_best_loss:
             best_valid_loss = valid_scores['loss']                    
-            utils.save_dict_to_json(valid_scores, os.path.join(exp_dir, 'best_val_loss.json'))
+            utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_loss.json'))
             
         if is_best_f1:
             best_valid_f1 = valid_scores['f1']                    
-            utils.save_dict_to_json(valid_scores, os.path.join(exp_dir, 'best_val_f1.json'))
+            utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_f1.json'))
         
         # Save the latest valid scores in exp_dir
-        # utils.save_dict_to_json(valid_scores, os.path.join(exp_dir, 'last_val_scores.json'))
+        # utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'last_val_scores.json'))
 
-        logging.info("\nEpoch {}/{}...".format(epoch+1, args.num_epochs))                       
+        print("\nEpoch {}/{}...".format(epoch+1, args.num_epochs))                       
         print('\n[Train] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | recall: {3:.2f}% | precision: {4:.2f}% | specificity: {5:.2f}%'.format(
             train_scores['loss'], train_scores['accuracy']*100, train_scores['f1']*100, train_scores['recall']*100, train_scores['precision']*100, train_scores['specificity']*100))
         print('[Val] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | recall: {3:.2f}% | precision: {4:.2f}% | specificity: {5:.2f}%\n'.format(
             valid_scores['loss'], valid_scores['accuracy']*100, valid_scores['f1']*100, valid_scores['recall']*100, valid_scores['precision']*100, valid_scores['specificity']*100))
     
-    # Write performance to 'expname_prfs.json'
-    with open(os.path.join(exp_dir, args.exp_name+'.json'), 'w') as fout:
+    # Write performance and args to json
+    prfs_name = os.path.basename(args.exp_dir)+'.json'
+    with open(os.path.join(args.exp_dir, prfs_name), 'w') as fout:
         json.dump(output_dict, fout, indent=4)
                    
     
 
         
-def test(model, test_iterator, criterion, metrics, exp_dir, restore_file):   
+def test(model, test_iterator, criterion, metrics, args, restore_file):   
      
-    utils.load_checkpoint(os.path.join(exp_dir, restore_file + '.pth.tar'), model)
+    utils.load_checkpoint(os.path.join(args.exp_dir, restore_file + '.pth.tar'), model)
     test_scores = evaluate(model, test_iterator, criterion, metrics)
-    # save_path = os.path.join(exp_dir, "test_scores.json")
+    # save_path = os.path.join(args.exp_dir, "test_scores.json")
     # utils.save_dict_to_json(test_scores, save_path)  
     print('\n[Test] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | recall: {3:.2f}% | precision: {4:.2f}% | specificity: {5:.2f}%'.format(
             test_scores['loss'], test_scores['accuracy']*100, test_scores['f1']*100, test_scores['recall']*100, test_scores['precision']*100, test_scores['specificity']*100))
