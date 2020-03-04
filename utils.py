@@ -26,7 +26,7 @@ def set_logger(log_path):
         logging.info("Start training...")
         ```
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger() 
     logger.setLevel(logging.INFO)
     
     if not logger.handlers:
