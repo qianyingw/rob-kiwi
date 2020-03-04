@@ -9,9 +9,6 @@ github.com/CSTR-Edinburgh/mlpractical/blob/mlp2019-20/mlp_cluster_tutorial/arg_e
 import argparse
 import json
 import os
-import sys
-import GPUtil
-import torch
 
 
 USER = os.getenv('USER')
@@ -36,10 +33,11 @@ def get_args():
     # Experiments
     parser.add_argument('--seed', nargs="?", type=int, default=1234, help='Seed for random number generator')
     parser.add_argument('--batch_size', nargs="?", type=int, default=32, help='Batch size')
-    parser.add_argument('--num_epochs', nargs="?", type=int, default=2, help='Number of epochs')   
+    parser.add_argument('--num_epochs', nargs="?", type=int, default=20, help='Number of epochs')   
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
-    parser.add_argument('--exp_path', nargs="?", type=str, default=None, help='Output folder')
+    parser.add_argument('--exp_dir', nargs="?", type=str, default="/media/qwang/rob/temp", help='Folder of the experiment')
+    
     parser.add_argument('--save_model', nargs="?", type=str, default='No', choices=['loss', 'f1', 'No'], help='Save model.pth.tar with best loss/f1')
     
     # Data
@@ -61,15 +59,14 @@ def get_args():
                         choices=['cnn', 'rnn', 'attn', 'transformer'], 
                         help="Different networks [options: 'cnn', 'rnn', 'attn', 'transformer']")
     parser.add_argument('--dropout', nargs="?", type=float, default=0.5, help='Dropout rate')
-    
+    parser.add_argument('--embed_dim', nargs="?", type=int, default=512, help='Dimension of sentence encoder')
     
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=False, help='Assign class weights for imbalanced data')
     parser.add_argument('--max_doc_len', nargs="?", type=int, default=600, help='Maximum number of sents in one document overall the batches')
     
-    
     # CNN
-    parser.add_argument('--num_filters', nargs="?", type=int, default=5, help='Number of filters for each filter size (CNN)')   
-    parser.add_argument('--filter_sizes', nargs="?", type=str, default='3,4', help='Filter sizes (CNN)')
+    parser.add_argument('--num_filters', nargs="?", type=int, default=10, help='Number of filters for each filter size (cnn)')   
+    parser.add_argument('--filter_sizes', nargs="?", type=str, default='3,4,5', help='Filter sizes (cnn)')
     
     # RNN/Attention
     parser.add_argument('--rnn_cell_type', nargs="?", type=str, default="lstm", choices=['lstm', 'gru'], help="Type of RNN cell [options: 'lstm', 'gru']")
