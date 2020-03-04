@@ -23,9 +23,10 @@ class RoBDataset(Dataset):
         
         self.mat_dir = mat_dir
         self.rob_item = rob_item     
-        self.info_df = pd.read_pickle(info_file)
+        info_df = pd.read_pickle(info_file)
         if group:
-            self.info_df = self.info_df[self.info_df['partition']==group]
+            info_df = info_df[info_df['partition']==group]
+        self.info_df = info_df.reset_index(drop=True)
         
     def __len__(self):
         return len(self.info_df)
