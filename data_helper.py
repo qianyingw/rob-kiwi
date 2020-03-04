@@ -8,14 +8,10 @@ Created on Mon Mar  2 20:10:07 2020
 import json
 import os
 import pandas as pd
-import numpy as np
 import math
 from tqdm import tqdm
 import random
 
-# USE
-import tensorflow_hub as hub
-embed_func = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
 
 # Change to data dir
 data_dir = '/media/mynewdrive/rob/'
@@ -27,7 +23,7 @@ val_ratio = 0.1
 data_json_path = 'data/rob_tokens.json'
 rm_na = False
 
-#%%
+
 def read_json(json_path):
     df = []
     with open(json_path, 'r') as fin:
@@ -35,46 +31,86 @@ def read_json(json_path):
             df.append(json.loads(line))
     return df
 
-# Generate pkl file
-def gen_pkl(dat_ls, pkl_path):
+
+#%% Generate separate pkl files
+# USE
+import tensorflow_hub as hub
+embed_func = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+    
+
+def gen_pkls(dat_ls, pkl_dir): 
+    
+    if os.path.exists(pkl_dir) == False:
+        os.makedirs(pkl_dir) 
+        
     for i, r in tqdm(enumerate(dat_ls)): 
-        sentTokens = r['sentTokens'] 
-        d_mat = []        
+        sentTokens = r['sentTokens']  
+        
         del r['wordTokens']; del r['sentTokens']
         del r['fileLink']; del r['DocumentLink']; del r['txtLink']
-                     
+        
+        d_mat = []             
         for sl in sentTokens:
             s = [' '.join(sl)]
-            s_vec = embed_func(s).numpy().astype('float16') 
+            s_vec = embed_func(s).numpy().astype('float16') # convert sentence to embedding 
             s_vec = s_vec.tolist()[0]
-            d_mat.append(s_vec)
-        dat_ls[i]['docMat'] = d_mat
-    df = pd.DataFrame(dat_ls)
-    df.to_pickle(pkl_path)
-    
-#%%
+            d_mat.append(s_vec)        
+        mat_df = pd.DataFrame(d_mat)
+        pkl_path = os.path.join(pkl_dir, r['goldID']+'.pkl')
+        mat_df.to_pickle(pkl_path)
+
+dat = read_json(data_json_path)
+gen_pkls(dat_ls=dat, pkl_dir='data/rob_mat')   
+
+
+#%% rob_info_a(b).pkl
 dat = read_json(data_json_path)
 
-# Remove na records for welfare/conflict/conceal
-if rm_na == True:
-    dat = [g for g in dat if math.isnan(g['welfare']) == False] 
-
+if rm_na == True:  # Remove missing records for conceal/welfare/conflict
+    dat = [g for g in dat if math.isnan(g['AllocationConcealment']) == False]  
+    
 # Shuffle data
 random.seed(seed)
 random.shuffle(dat)
-
 train_size = int(len(dat) * train_ratio)
 val_size = int(len(dat) * val_ratio)
 
-train_ls = dat[:train_size]
-val_ls = dat[train_size : (train_size + val_size)]
-test_ls = dat[(train_size + val_size):]
+# Add 'partition' for random/blind/size/exclusion
+for g in dat[:train_size]:
+    g['partition'] = 'train'
+for g in dat[train_size : (train_size + val_size)]:
+    g['partition'] = 'valid'
+for g in dat[(train_size + val_size):]:
+    g['partition'] = 'test'    
 
-gen_pkl(dat_ls=train_ls, pkl_path="data/train.pkl")
-gen_pkl(dat_ls=val_ls, pkl_path="data/val.pkl")
-gen_pkl(dat_ls=test_ls, pkl_path="data/test.pkl")
+for i, r in tqdm(enumerate(dat)):          
+    del r['wordTokens']; del r['sentTokens']
+    del r['fileLink']; del r['DocumentLink']; del r['txtLink']
 
-        
+df = pd.DataFrame(dat)
+
+if rm_na == False:
+    df.to_pickle('data/rob_info_a.pkl')  # 'rob_info_a.pkl' for random/blind/size/exclusion
+else:
+    df.to_pickle('data/rob_info_b.pkl')  # 'rob_info_b.pkl' for conceal/welfare/conflict
 
 
-   
+
+## Generate single pkl
+#def gen_pkl(dat_ls, pkl_path):
+#    for i, r in tqdm(enumerate(dat_ls)): 
+#        sentTokens = r['sentTokens']  
+#        
+#        del r['wordTokens']; del r['sentTokens']
+#        del r['fileLink']; del r['DocumentLink']; del r['txtLink']
+#        
+#        d_mat = []             
+#        for sl in sentTokens:
+#            s = [' '.join(sl)]
+#            s_vec = embed_func(s).numpy().astype('float16') # convert sentence to embedding 
+#            s_vec = s_vec.tolist()[0]
+#            d_mat.append(s_vec)
+#        dat_ls[i]['docMat'] = d_mat
+#    df = pd.DataFrame(dat_ls)
+#    df.to_pickle(pkl_path)
+
