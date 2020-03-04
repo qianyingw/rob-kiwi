@@ -51,11 +51,9 @@ class ConvNet(nn.Module):
 
 class RecurNet(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout, pad_idx):
+    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
        
         super(RecurNet, self).__init__()
-        
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = pad_idx)
         
         self.lstm = nn.LSTM(input_size = embedding_dim, hidden_size = rnn_hidden_dim,
                             num_layers = rnn_num_layers, dropout = 0, 
@@ -72,23 +70,21 @@ class RecurNet(nn.Module):
         self.rnn_cell_type = rnn_cell_type
         
     
-    def forward(self, text):
+    def forward(self, doc):
         """
         Params:
-            text: torch tensor, [seq_len, batch_size]            
+            doc: torch tensor, [batch_size, doc_len, embed_dim]           
         Yields:
             out: torch tensor, [batch_size, output_dim]                   
         """    
-        embed = self.embedding(text)  # [seq_len, batch_size, embedding_dim]
-        embed = embed.permute(1,0,2)  # [batch_size, seq_len, embedding_dim]
         
-        # out: [batch_size, seq_len, num_directions*hidden_dim], output features from last layer for each t
-        # h_n: [batch_size, num_layers*num_directions, hidden_dim], hidden state for t=seq_len
-        # c_n: [batch_size, num_layers*num*directions, hidden_dim], cell state fir t=seq_len
+        # out: [batch_size, doc_len, num_directions*hidden_dim], output features from last layer for each t
+        # h_n: [batch_size, num_layers*num_directions, hidden_dim], hidden state for t=doc_len
+        # c_n: [batch_size, num_layers*num*directions, hidden_dim], cell state fir t=doc_len
         if self.rnn_cell_type == 'lstm':
-            out, (h_n, c_n) = self.lstm(embed)
+            out, (h_n, c_n) = self.lstm(doc)
         else:
-            out, h_n = self.gru(embed)
+            out, h_n = self.gru(doc)
 
         # Obtain the last hidden state from last layer
         batch_len = out.size()[0]
@@ -111,11 +107,9 @@ class RecurNet(nn.Module):
 
 class AttnNet(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout, pad_idx):
+    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
         
         super(AttnNet, self).__init__()
-        
-        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = pad_idx)
         
         self.lstm = nn.LSTM(input_size = embedding_dim, hidden_size = rnn_hidden_dim,
                             num_layers = rnn_num_layers, dropout = 0, 
@@ -141,29 +135,31 @@ class AttnNet(nn.Module):
         nn.init.kaiming_uniform_(c, mode='fan_in', nonlinearity='relu')
         self.c = nn.Parameter(c)
         
-        
         self.dropout = nn.Dropout(dropout)
         self.tanh = nn.Tanh()
         self.linear = nn.Linear(num_directions*rnn_hidden_dim, output_dim)
         
         
-    def forward(self, text):
+    def forward(self, doc):
+        """
+        Params:
+            doc: torch tensor, [batch_size, doc_len, embed_dim]           
+        Yields:
+            out: torch tensor, [batch_size, output_dim]                   
+        """  
         
-        embed = self.embedding(text)  # [seq_len, batch_size, embedding_dim]
-        embed = embed.permute(1,0,2)  # [batch_size, seq_len, embedding_dim]
-        
-        # a: [batch_size, seq_len, num_directions*hidden_dim], output features from last layer for each t
-        # h_n: [batch_size, num_layers*num_directions, hidden_dim], hidden state for t=seq_len
-        # c_n: [batch_size, num_layers*num*directions, hidden_dim], cell state fir t=seq_len
+        # a: [batch_size, doc_len, num_directions*hidden_dim], output features from last layer for each t
+        # h_n: [batch_size, num_layers*num_directions, hidden_dim], hidden state for t=doc_len
+        # c_n: [batch_size, num_layers*num*directions, hidden_dim], cell state fir t=doc_len
         if self.rnn_cell_type == 'lstm':
-            a, (h_n, c_n) = self.lstm(embed)
+            a, (h_n, c_n) = self.lstm(doc)
         else:
-            a, h_n = self.gru(embed)
+            a, h_n = self.gru(doc)
 
         # Attention
         # w: [num_directions*hidden_dim, num_directions*hidden_dim]
-        u = self.tanh(torch.matmul(a, self.w) + self.b)  # [batch_size, seq_len, num_directions*hidden_dim]
-        s = F.softmax(torch.matmul(u, self.c), dim=1)  # [batch_size, seq_len, 1]
+        u = self.tanh(torch.matmul(a, self.w) + self.b)  # [batch_size, doc_len, num_directions*hidden_dim]
+        s = F.softmax(torch.matmul(u, self.c), dim=1)  # [batch_size, doc_len, 1]
                 
         # Combine RNN output a and scores s
         z = torch.matmul(a.permute(0,2,1), s)  # [batch_size, num_directions*hidden_dim, 1]
