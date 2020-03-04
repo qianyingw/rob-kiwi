@@ -19,10 +19,12 @@ from torch.utils.data import Dataset
 class RoBDataset(Dataset):
     """ RoB dataset """
     
-    def __init__(self, info_file, mat_dir, rob_item, group=None):  
+    def __init__(self, info_file, mat_dir, rob_item, max_len=None, group=None):  
         
         self.mat_dir = mat_dir
         self.rob_item = rob_item     
+        self.max_len = max_len
+        
         info_df = pd.read_pickle(info_file)
         if group:
             info_df = info_df[info_df['partition']==group]
@@ -42,15 +44,23 @@ class RoBDataset(Dataset):
             'AnimalWelfareRegulations'
             'ConflictsOfInterest'
         """
-        dmat_path = os.path.join(self.mat_dir, self.info_df.loc[idx, 'goldID']+'.pkl')
+        dmat_path = os.path.join(self.mat_dir, self.info_df.loc[idx, 'goldID']+'.pkl')  
+        doc_df = pd.read_pickle(dmat_path)    
+        if self.max_len:
+            doc_df = doc_df[:self.max_len]
         
-        doc_df = pd.read_pickle(dmat_path)      
         label = self.info_df.loc[idx, self.rob_item]
         
         doc_tensor = torch.tensor(doc_df.values).float()
         label_tensor = torch.tensor([label]).float()
 
         return doc_tensor, label_tensor
+    
+    def cls_weight(self):
+        df = self.info_df   
+        n_pos = len(df[df[self.rob_item]==1])
+        n_neg = len(df[df[self.rob_item]==0])     
+        return [1/n_pos, 1/n_neg]
     
         
 class PadDoc:
@@ -76,9 +86,12 @@ class PadDoc:
 #train_set = RoBDataset(info_file='data/rob_info_a.pkl',
 #                       mat_dir='data/rob_mat',
 #                       rob_item='RandomizationTreatmentControl',
-#                       group='train')
+#                       group='train',
+#                       max_len=100)
 #
 #len(train_set)  # 6272
+#train_set.cls_weight()
+#
 #idx = 0
 #doc, label = train_set[idx]
 #doc.size()  # torch.Size([195, 512])
