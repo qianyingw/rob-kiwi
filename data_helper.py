@@ -11,6 +11,7 @@ import pandas as pd
 import math
 from tqdm import tqdm
 import random
+import pickle
 
 
 # Change to data dir
@@ -32,25 +33,44 @@ def read_json(json_path):
     return df
 
 
-#%% Generate separate pkl files
+#%% Generate string list pkl files
+def gen_ls_pkls(dat_ls, pkl_dir): 
+    
+    if os.path.exists(pkl_dir) == False:
+        os.makedirs(pkl_dir) 
+        
+    for i, r in tqdm(enumerate(dat_ls)):  
+        doc_ls = []             
+        for s in r['sentTokens']:
+            sent_str = [' '.join(s)]
+            doc_ls.append(sent_str)    
+            
+        pkl_path = os.path.join(pkl_dir, r['goldID']+'.pkl')        
+        with open(pkl_path, 'wb') as fout:
+            pickle.dump(doc_ls, fout)
+
+
+dat = read_json(data_json_path)
+gen_ls_pkls(dat_ls=dat, pkl_dir='data/rob_str')   
+
+
+#with open(pkl_path, 'rb') as fin:
+#    ls = pickle.load(fin)
+
+#%% Generate document matrix (dataframe) pkls
 # USE
 import tensorflow_hub as hub
 embed_func = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
     
 
-def gen_pkls(dat_ls, pkl_dir): 
+def gen_df_pkls(dat_ls, pkl_dir): 
     
     if os.path.exists(pkl_dir) == False:
         os.makedirs(pkl_dir) 
         
-    for i, r in tqdm(enumerate(dat_ls)): 
-        sentTokens = r['sentTokens']  
-        
-        del r['wordTokens']; del r['sentTokens']
-        del r['fileLink']; del r['DocumentLink']; del r['txtLink']
-        
+    for i, r in tqdm(enumerate(dat_ls)):                
         d_mat = []             
-        for sl in sentTokens:
+        for sl in r['sentTokens']:
             s = [' '.join(sl)]
             s_vec = embed_func(s).numpy().astype('float16') # convert sentence to embedding 
             s_vec = s_vec.tolist()[0]
@@ -60,7 +80,7 @@ def gen_pkls(dat_ls, pkl_dir):
         mat_df.to_pickle(pkl_path)
 
 dat = read_json(data_json_path)
-gen_pkls(dat_ls=dat, pkl_dir='data/rob_mat')   
+gen_df_pkls(dat_ls=dat, pkl_dir='data/rob_mat')   
 
 
 #%% rob_info_a(b).pkl
