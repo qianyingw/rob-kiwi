@@ -36,7 +36,7 @@ def get_args():
     parser.add_argument('--num_epochs', nargs="?", type=int, default=2, help='Number of epochs')   
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
-    parser.add_argument('--exp_dir', nargs="?", type=str, default="/media/qwang/rob/temp", help='Folder of the experiment')
+    parser.add_argument('--exp_dir', nargs="?", type=str, default="/media/qwang/rob/temp2", help='Folder of the experiment')
     
     parser.add_argument('--save_model', nargs="?", type=str, default='No', choices=['loss', 'f1', 'No'], help='Save model.pth.tar with best loss/f1')
     
@@ -61,7 +61,8 @@ def get_args():
     parser.add_argument('--dropout', nargs="?", type=float, default=0.5, help='Dropout rate')
     parser.add_argument('--embed_dim', nargs="?", type=int, default=512, help='Dimension of sentence encoder')   
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=False, help='Assign class weights for imbalanced data')
-    parser.add_argument('--max_doc_len', nargs="?", type=int, default=None, help='Maximum number of sents in one document overall the batches')
+    parser.add_argument('--freeze_embed', nargs="?", type=str2bool, default=False, help='Train embedding or not')
+    parser.add_argument('--max_doc_len', nargs="?", type=int, default=400, help='Maximum number of sents in one document overall the batches')
     
     # CNN
     parser.add_argument('--num_filters', nargs="?", type=int, default=100, help='Number of filters for each filter size (cnn)')   

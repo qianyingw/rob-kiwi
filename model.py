@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 class ConvNet(nn.Module):
     
-    def __init__(self, embedding_dim, n_filters, filter_sizes, output_dim, dropout):
+    def __init__(self, freeze_embed, input_len, embedding_dim, n_filters, filter_sizes, output_dim, dropout):
     
         super().__init__()
         self.convs = nn.ModuleList([nn.Conv2d(in_channels = 1,
@@ -22,6 +22,10 @@ class ConvNet(nn.Module):
                                    ])                
         self.fc = nn.Linear(n_filters * len(filter_sizes), output_dim)
         self.dropout = nn.Dropout(dropout)
+        
+        if freeze_embed == False and input_len != None:
+            self.doc_w = nn.Parameter(torch.Tensor([input_len, 512]))
+
     
     
     def forward(self, doc):
