@@ -9,6 +9,7 @@ Created on Thu Oct 31 15:53:39 2019
 
 import os
 import pandas as pd
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -46,8 +47,13 @@ class RoBDataset(Dataset):
         """
         dmat_path = os.path.join(self.mat_dir, self.info_df.loc[idx, 'goldID']+'.pkl')  
         doc_df = pd.read_pickle(dmat_path)    
-        if self.max_len:
+        
+        # Cut/Pad doc mat
+        if self.max_len < len(doc_df):
             doc_df = doc_df[:self.max_len]
+        else:
+            zero_df = pd.DataFrame(np.zeros((self.max_len-len(doc_df), 512)))
+            doc_df = pd.concat([doc_df, zero_df])
         
         label = self.info_df.loc[idx, self.rob_item]
         
@@ -119,3 +125,6 @@ class PadDoc:
 #for i, rob_batch in enumerate(train_loader):
 #    print("[batch {}] Doc: {}, Label: {}".format(i, rob_batch[0].size(), rob_batch[1].size()))
 #    if i == 5: break
+
+
+
