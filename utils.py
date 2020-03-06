@@ -135,7 +135,7 @@ def plot_prfs(prfs_json_path):
         dat = json.load(f)
         
     # Create scores dataframe
-    epochs = dat['args']['num_epochs']
+    epochs = len(dat['prfs'])/2
     train_df = pd.DataFrame(columns=['Loss', 'Accuracy', 'F1', 'Recall', 'Precision', 'Specificity'])
     valid_df = pd.DataFrame(columns=['Loss', 'Accuracy', 'F1', 'Recall', 'Precision', 'Specificity'])
     for i in range(epochs):

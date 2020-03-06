@@ -140,7 +140,7 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
         if valid_scores['loss'] > best_valid_loss:
             n_worse += 1
         if n_worse == args.stop_patience:
-            print("Early stopping: valid loss didn't improve for {} times.".format(args.stop_patience))
+            print("Early stopping (patience={}).".format(args.stop_patience))
             break
 
     # Write performance and args to json
