@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 class ConvNet(nn.Module):
     
-    def __init__(self, freeze_embed, input_len, embedding_dim, n_filters, filter_sizes, output_dim, dropout):
+    def __init__(self, tune_embed, input_len, embedding_dim, n_filters, filter_sizes, output_dim, dropout):
     
         super().__init__()
         self.convs = nn.ModuleList([nn.Conv2d(in_channels = 1,
@@ -23,7 +23,7 @@ class ConvNet(nn.Module):
         self.fc = nn.Linear(n_filters * len(filter_sizes), output_dim)
         self.dropout = nn.Dropout(dropout)
         
-        if freeze_embed == False and input_len != None:
+        if tune_embed == True and input_len != None:
             self.doc_w = nn.Parameter(torch.Tensor([input_len, 512]))
 
     
@@ -55,7 +55,7 @@ class ConvNet(nn.Module):
 
 class RecurNet(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
+    def __init__(self, tune_embed, input_len, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
        
         super(RecurNet, self).__init__()
         
@@ -72,6 +72,9 @@ class RecurNet(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.linear = nn.Linear(rnn_hidden_dim*num_directions, output_dim)
         self.rnn_cell_type = rnn_cell_type
+        
+        if tune_embed == True and input_len != None:
+            self.doc_w = nn.Parameter(torch.Tensor([input_len, 512]))
         
     
     def forward(self, doc):
@@ -111,7 +114,7 @@ class RecurNet(nn.Module):
 
 class AttnNet(nn.Module):
     
-    def __init__(self, vocab_size, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
+    def __init__(self, tune_embed, input_len, embedding_dim, rnn_hidden_dim, rnn_num_layers, output_dim, bidirection, rnn_cell_type, dropout):
         
         super(AttnNet, self).__init__()
         
@@ -142,6 +145,9 @@ class AttnNet(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.tanh = nn.Tanh()
         self.linear = nn.Linear(num_directions*rnn_hidden_dim, output_dim)
+        
+        if tune_embed == True and input_len != None:
+            self.doc_w = nn.Parameter(torch.Tensor([input_len, 512]))
         
         
     def forward(self, doc):

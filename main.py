@@ -82,7 +82,7 @@ valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, n
 if args.net_type == 'cnn':
     sizes = args.filter_sizes.split(',')
     sizes = [int(s) for s in sizes]
-    model = ConvNet(freeze_embed = args.freeze_embed,
+    model = ConvNet(tune_embed = args.tune_embed,
                     input_len = args.max_doc_len,
                     embedding_dim = args.embed_dim, 
                     n_filters = args.num_filters, 
@@ -93,9 +93,7 @@ if args.net_type == 'cnn':
 n_pars = sum(p.numel() for p in model.parameters())
 print(model)
 print("Number of parameters: {}".format(n_pars))
-for parameter in model.parameters():
-    print(parameter)
-print(model.parameters())
+
 
 #%% Define the optimizer, criterion and metrics
 optimizer = optim.Adam(model.parameters())
