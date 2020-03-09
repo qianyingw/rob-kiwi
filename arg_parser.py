@@ -39,7 +39,8 @@ def get_args():
     parser.add_argument('--exp_dir', nargs="?", type=str, default="/media/qwang/rob/temp2", help='Folder of the experiment')
     
     parser.add_argument('--save_model', nargs="?", type=str2bool, default=False, help='Save model.pth.tar with best loss')
-    parser.add_argument('--stop_patience', nargs="?", type=int, default=5, help='Number of cases when valid loss is lower than best loss')
+    parser.add_argument('--stop_patience', nargs="?", type=int, default=5, help='Number of cases when valid loss is lower than the best loss')
+    parser.add_argument('--stop_criterion', nargs="?", type=float, default=0.02, help='Acceptable difference compared with the best loss')
 
     
     # Data

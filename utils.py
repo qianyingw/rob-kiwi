@@ -135,7 +135,7 @@ def plot_prfs(prfs_json_path):
         dat = json.load(f)
         
     # Create scores dataframe
-    epochs = len(dat['prfs'])/2
+    epochs = int(len(dat['prfs'])/2)
     train_df = pd.DataFrame(columns=['Loss', 'Accuracy', 'F1', 'Recall', 'Precision', 'Specificity'])
     valid_df = pd.DataFrame(columns=['Loss', 'Accuracy', 'F1', 'Recall', 'Precision', 'Specificity'])
     for i in range(epochs):
@@ -147,7 +147,7 @@ def plot_prfs(prfs_json_path):
     x = np.arange(len(train_df)) + 1   
     # Loss / F1
     plt.subplot(1, 2, 1)
-    plt.title("Loss")
+    plt.title("Loss and F1")
     plt.plot(x, train_df['Loss'], label="train_loss", color='C5')
     plt.plot(x, valid_df['Loss'], label="val_loss", color='C5', linestyle='--')
     plt.plot(x, train_df['F1'], label="train_f1", color='C9')
@@ -156,7 +156,7 @@ def plot_prfs(prfs_json_path):
     plt.legend(loc='upper right')
     # Accuracy / Recall
     plt.subplot(1, 2, 2)
-    plt.title("Scores")
+    plt.title("Accuracy and Recall")
     plt.plot(x, train_df['Accuracy'], label="train_acc", color='C0', alpha=0.8)
     plt.plot(x, valid_df['Accuracy'], label="val_acc", color='C0', linestyle='--', alpha=0.8)
     #plt.plot(x, train_df['F1'], label="train_f1", color='C9')
@@ -168,4 +168,4 @@ def plot_prfs(prfs_json_path):
     
     # Save png
     output_dir = os.path.dirname(prfs_json_path)
-    plt.savefig(os.path.join(output_dir+'prfs.png'))
+    plt.savefig(os.path.join(output_dir, 'prfs.png'))
