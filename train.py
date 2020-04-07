@@ -17,7 +17,7 @@ import utils
 
      
 
-def train(model, iterator, criterion, optimizer, metrics):
+def train(model, iterator, criterion, optimizer, metrics, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(iterator)
@@ -37,7 +37,7 @@ def train(model, iterator, criterion, optimizer, metrics):
             preds = model(batch_doc)  # preds.shape: [batch_size, output_dim]
             
             loss = criterion(preds, batch_label)       
-            epoch_scores = metrics(preds, batch_label)  # dictionary of 5 metric scores
+            epoch_scores = metrics(preds, batch_label, threshold)  # dictionary of 5 metric scores
                    
             loss.backward()
             optimizer.step()
@@ -53,7 +53,7 @@ def train(model, iterator, criterion, optimizer, metrics):
     return scores
 
 
-def evaluate(model, iterator, criterion, metrics):
+def evaluate(model, iterator, criterion, metrics, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(iterator)
@@ -71,7 +71,7 @@ def evaluate(model, iterator, criterion, metrics):
                 preds = model(batch_doc)
                 
                 loss = criterion(preds, batch_label)
-                epoch_scores = metrics(preds, batch_label)  # dictionary of 5 metric scores
+                epoch_scores = metrics(preds, batch_label, threshold)  # dictionary of 5 metric scores
                 
                 scores['loss'] += loss.item()
                 for key, value in epoch_scores.items():               
@@ -100,33 +100,39 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
     
     # For early stopping
     n_worse = 0
-    best_valid_loss = float('inf')
-    best_valid_f1 = -float('inf')
+    min_valid_loss = float('inf')
+    max_valid_f1 = -float('inf')
     
     # Create args and output dictionary (for json output)
     output_dict = {'args': vars(args), 'prfs': {}}
     
     for epoch in range(args.num_epochs):
         
-        train_scores = train(model, train_iterator, criterion, optimizer, metrics)
-        valid_scores = evaluate(model, valid_iterator, criterion, metrics)        
+        train_scores = train(model, train_iterator, criterion, optimizer, metrics, args.threshold)
+        valid_scores = evaluate(model, valid_iterator, criterion, metrics, args.threshold)        
         
         # Update output dictionary
         output_dict['prfs'][str('train_'+str(epoch+1))] = train_scores
         output_dict['prfs'][str('valid_'+str(epoch+1))] = valid_scores
         
         # Save scores
-        is_best_loss = valid_scores['loss'] < best_valid_loss 
-        if is_best_loss:
-            best_valid_loss = valid_scores['loss'] 
+        if valid_scores['loss'] < min_valid_loss:
+            min_valid_loss = valid_scores['loss']    
+        if valid_scores['f1'] > max_valid_f1:
+            max_valid_f1 = valid_scores['f1'] 
         
-        is_best_f1 = valid_scores['f1'] > best_valid_f1 
-        if is_best_f1:
-            best_valid_f1 = valid_scores['f1'] 
         
-        is_best = (valid_scores['loss']-best_valid_loss <= args.stop_criterion) and (is_best_f1 == True)
-        if is_best:       
+        
+        is_best = (valid_scores['loss']-min_valid_loss <= args.stop_c1) and (max_valid_f1-valid_scores['f1'] <= args.stop_c2)
+        if is_best == True:       
             utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_scores.json'))
+        
+        # Save model
+        if args.save_model == True:
+            utils.save_checkpoint({'epoch': epoch+1,
+                                   'state_dict': model.state_dict(),
+                                   'optim_Dict': optimizer.state_dict()},
+                                   is_best = is_best, checkdir = args.exp_dir)
         
         # Save model
         if args.save_model == True:
@@ -143,12 +149,12 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
             train_scores['loss'], train_scores['accuracy']*100, train_scores['f1']*100, train_scores['recall']*100, train_scores['precision']*100, train_scores['specificity']*100))
         print('[Val] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | rec: {3:.2f}% | prec: {4:.2f}% | spec: {5:.2f}%\n'.format(
             valid_scores['loss'], valid_scores['accuracy']*100, valid_scores['f1']*100, valid_scores['recall']*100, valid_scores['precision']*100, valid_scores['specificity']*100))
-             
+        
         # Early stopping             
-        if valid_scores['loss'] - best_valid_loss > args.stop_criterion:
+        if (valid_scores['loss']-min_valid_loss > args.stop_c1) and (max_valid_f1-valid_scores['f1'] > args.stop_c2):
             n_worse += 1
-        if n_worse == args.stop_patience:
-            print("Early stopping (patience={}, criterion={}).".format(args.stop_patience, args.stop_criterion))
+        if n_worse == args.stop_p:
+            print("Early stopping")
             break
     
     # Write performance and args to json
@@ -158,7 +164,7 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
         json.dump(output_dict, fout, indent=4)
         
     # Save performance plot    
-    utils.plot_prfs(prfs_json_path=prfs_path)
+    # utils.plot_prfs(prfs_json_path=prfs_path)
 
         
 def test(model, test_iterator, criterion, metrics, args, restore_file):   
