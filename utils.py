@@ -96,7 +96,7 @@ def load_checkpoint(checkfile, model, optimizer=None):
 
 
 #%% Metrics   
-def metrics(preds, y):
+def metrics(preds, y, th=0.5):
     """
     Params:
         preds: torch tensor, [batch_size, output_dim]
@@ -106,8 +106,13 @@ def metrics(preds, y):
         A dictionary of accuracy, f1 score, recall, precision and specificity       
         
     """   
-    y_preds = preds.argmax(dim=1, keepdim=False)  # [batch_size, output_dim]  --> [batch_size]
-        
+    
+    #  y_preds = preds.argmax(dim=1, keepdim=False)  # [batch_size, output_dim]  --> [batch_size]
+    if torch.cuda.device_count() == 1:
+        y_preds = (preds[:,1] > th).int().type(torch.LongTensor).cuda()
+    else:
+        y_preds = (preds[:,1] > th).int().type(torch.LongTensor)
+    
     ones = torch.ones_like(y_preds)
     zeros = torch.zeros_like(y_preds)
     
