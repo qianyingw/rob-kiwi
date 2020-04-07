@@ -27,9 +27,18 @@ class RoBDataset(Dataset):
         self.max_len = max_len
         
         info_df = pd.read_pickle(info_file)
+
+        # Remove records with NA annotations 
+        # Can only use different info file
+        # Group is pre-assigned in data_helper (for consistency with rob-pomem)
+        # info_df = info_df.dropna(subset=[self.rob_item])
+        # info_df.reset_index(drop=True)
+        print('Overal data size: {}'.format(len(info_df)))
+               
         if group:
             info_df = info_df[info_df['partition']==group]
         self.info_df = info_df.reset_index(drop=True)
+        
         
     def __len__(self):
         return len(self.info_df)
@@ -48,12 +57,12 @@ class RoBDataset(Dataset):
         dmat_path = os.path.join(self.mat_dir, self.info_df.loc[idx, 'goldID']+'.pkl')  
         doc_df = pd.read_pickle(dmat_path)    
         
-        # Cut/Pad doc mat
+        # Limit doc_len
         if self.max_len < len(doc_df):
             doc_df = doc_df[:self.max_len]
-        else:
-            zero_df = pd.DataFrame(np.zeros((self.max_len-len(doc_df), 512)))
-            doc_df = pd.concat([doc_df, zero_df])
+#        else:
+#            zero_df = pd.DataFrame(np.zeros((self.max_len-len(doc_df), 512)))
+#            doc_df = pd.concat([doc_df, zero_df])
         
         label = self.info_df.loc[idx, self.rob_item]
         
@@ -91,21 +100,21 @@ class PadDoc:
 #os.chdir(data_dir)
 #train_set = RoBDataset(info_file='data/rob_info_a.pkl',
 #                       mat_dir='data/rob_mat',
-#                       rob_item='RandomizationTreatmentControl',
+#                       rob_item='AllocationConcealment',
 #                       group='train',
-#                       max_len=100)
+#                       max_len=1000)
 #
 #len(train_set)  # 6272
 #train_set.cls_weight()
 #
 #idx = 0
 #doc, label = train_set[idx]
-#doc.size()  # torch.Size([195, 512])
+#doc.size()  # torch.Size([100, 512])
 #label.size() # torch.Size([1])
 #
 #for i in range(len(train_set)):
 #    doc, label = train_set[i]
-#    print(label)
+#    print(doc.size())
 #    if i == 20: break
 #
 ## DataLoader
@@ -114,8 +123,8 @@ class PadDoc:
 #
 #
 #batch = next(iter(train_loader))
-#doc_batch = batch[0]; print(doc_batch)   
-#label_batch = batch[1]; print(label_batch)    
+#doc_batch = batch[0]; print(doc_batch.size())   
+#label_batch = batch[1]; print(label_batch.size())    
 #len_batch = batch[2]; print(len_batch)  
 #
 #doc_batch.size()  # [batch_size, doc_len, embed_dim]
