@@ -14,7 +14,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-os.chdir('/media/qwang/rob/src-kiwi')
+os.chdir('/home/qwang/rob/rob-kiwi')
 
 
 from utils import metrics
@@ -51,7 +51,7 @@ elif torch.cuda.device_count() == 1:
 else:
     device = torch.device('cpu')     
 
-   
+
 #%% Set logger
 #log_dir = os.path.join(args.exp_path, args.exp_name)
 #if os.path.exists(log_dir) == False:
@@ -100,15 +100,19 @@ optimizer = optim.Adam(model.parameters())
 metrics_fn = metrics
 
 # Weight balancing
-if args.weight_balance == True:
+if args.weight_balance == True and torch.cuda.device_count() == 0:
+    criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(train_set.cls_weight()))
+elif args.weight_balance == True and torch.cuda.device_count() > 0:
     criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(train_set.cls_weight()).cuda())
 else:
     criterion = nn.CrossEntropyLoss()
-
+    
+    
 if torch.cuda.device_count() > 1:  # multiple GPUs
     model = nn.DataParallel(module=model)
 model = model.to(device)
-criterion = criterion.to(device)
+criterion = criterion.to(device)    
+    
 
 #%% Train the model
 train_evaluate(model, train_loader, valid_loader, criterion, optimizer, metrics_fn, args)
