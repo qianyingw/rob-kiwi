@@ -33,14 +33,15 @@ def get_args():
     # Experiments
     parser.add_argument('--seed', nargs="?", type=int, default=1234, help='Seed for random number generator')
     parser.add_argument('--batch_size', nargs="?", type=int, default=32, help='Batch size')
-    parser.add_argument('--num_epochs', nargs="?", type=int, default=20, help='Number of epochs')   
+    parser.add_argument('--num_epochs', nargs="?", type=int, default=40, help='Number of epochs')   
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
     parser.add_argument('--exp_dir', nargs="?", type=str, default="/media/qwang/rob/temp2", help='Folder of the experiment')
     
     parser.add_argument('--save_model', nargs="?", type=str2bool, default=False, help='Save model.pth.tar with best loss')
-    parser.add_argument('--stop_patience', nargs="?", type=int, default=5, help='Number of cases when valid loss is lower than the best loss')
-    parser.add_argument('--stop_criterion', nargs="?", type=float, default=0.02, help='Acceptable difference compared with the best loss')
+    parser.add_argument('--stop_p', nargs="?", type=int, default=999, help='Number of cases when valid loss and F1 do not meet criteria')
+    parser.add_argument('--stop_c1', nargs="?", type=float, default=999, help='Acceptable difference compared with the best loss')
+    parser.add_argument('--stop_c2', nargs="?", type=float, default=999, help='Acceptable difference compared with the best f1')
 
     
     # Data
@@ -65,7 +66,8 @@ def get_args():
     parser.add_argument('--embed_dim', nargs="?", type=int, default=512, help='Dimension of sentence encoder')   
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=False, help='Assign class weights for imbalanced data')
     parser.add_argument('--tune_embed', nargs="?", type=str2bool, default=True, help='Tune embedding or not')
-    parser.add_argument('--max_doc_len', nargs="?", type=int, default=400, help='Maximum number of sents in one document overall the batches')
+    parser.add_argument('--threshold', nargs="?", type=float, default=0.5, help='Threshold for positive class value')
+    parser.add_argument('--max_doc_len', nargs="?", type=int, default=1000, help='Maximum number of sents in one document overall the batches')
     
     # CNN
     parser.add_argument('--num_filters', nargs="?", type=int, default=100, help='Number of filters for each filter size (cnn)')   
