@@ -1,2 +1,2 @@
 ## Neural network models for risk of bias classification in preclinical publications
-#### with sentence level
+#### with USE, BERT
