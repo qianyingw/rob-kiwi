@@ -88,8 +88,6 @@ if args.net_type == 'cnn':
                     output_dim = 2, 
                     dropout = args.dropout)
 
-
-
     
 if args.net_type == 'attn':
     model = AttnNet(embedding_dim = args.embed_dim, 
