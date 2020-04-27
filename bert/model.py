@@ -13,7 +13,6 @@ import torch.nn.functional as F
 from transformers.modeling_bert import BertPreTrainedModel, BertConfig, BertModel
 
 
-
 #%%
 class BertLinear(BertPreTrainedModel):
 
