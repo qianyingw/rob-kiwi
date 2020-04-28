@@ -124,7 +124,7 @@ criterion = criterion.to(device)
     
 
 #%% Train the model
-train_evaluate(model, train_loader, valid_loader, optimizer, scheduler, criterion, metrics, args)
+train_evaluate(model, train_loader, valid_loader, optimizer, scheduler, criterion, metrics, args, device)
 
 
     
