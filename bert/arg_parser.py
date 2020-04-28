@@ -31,11 +31,11 @@ def get_args():
     
     # Experiments
     parser.add_argument('--seed', nargs="?", type=int, default=1234, help='Seed for random number generator')
-    parser.add_argument('--batch_size', nargs="?", type=int, default=16, help='Batch size')
+    parser.add_argument('--batch_size', nargs="?", type=int, default=8, help='Batch size')
     parser.add_argument('--num_epochs', nargs="?", type=int, default=4, help='Number of epochs')    
     parser.add_argument('--train_ratio', nargs="?", type=float, default=0.8, help='Ratio of training set')
     parser.add_argument('--val_ratio', nargs="?", type=float, default=0.1, help='Ratio of validation set')
-
+    parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='Learning rate of AdamW')
     
     parser.add_argument('--info_file', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_info_a.pkl", help='Path of info pickle file')
     parser.add_argument('--pkl_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_str", help='Directory of pickle files')
@@ -68,10 +68,9 @@ def get_args():
     parser.add_argument('--cut_tail_ratio', nargs="?", type=float, default=0.1, help='Ratio of tokens cut from tail')
     
 
-    # Transformer encoder
-    parser.add_argument('--num_heads', nargs="?", type=int, default=2, help='Number of heads in the multi-head attention module')
-    parser.add_argument('--ff_dim', nargs="?", type=int, default=10, help='Dimension of the feedforward network model')
-    parser.add_argument('--num_enc_layers', nargs="?", type=int, default=2, help='Number of sub-encoder-layers in the encoder')
+    # BERT
+    parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
+    parser.add_argument('--n_chunks', nargs="?", type=int, default=8, help='Max number of text chunks in bert model')
     
     args = parser.parse_args()
     
