@@ -47,8 +47,8 @@ class BertLinear(BertPreTrainedModel):
                                   token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
         
         
-        dp = self.dropout(pooled)  # [batch_size, n_chunks, bert_hidden_size]
-        dp.view(batch_size, -1)  # [batch_size, n_chunks*bert_hidden_size]
+        dp = self.dropout(pooled)  # [batch_size, n_chunks, hidden_size]
+        dp = dp.view(batch_size, -1)  # [batch_size, n_chunks*hidden_size]
         out = self.fc(dp)  # [batch_size, num_labels]         
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
              
