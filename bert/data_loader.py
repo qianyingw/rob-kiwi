@@ -14,8 +14,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 
-from transformers import BertTokenizer
-bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 
    
 #%%
@@ -31,13 +29,14 @@ class DocDataset(Dataset):
         label
         
     """
-    def __init__(self, info_file, pkl_dir, rob_item, max_chunk_len, cut_head_ratio, cut_tail_ratio, group):  
+    def __init__(self, info_file, pkl_dir, rob_item, max_chunk_len, cut_head_ratio, cut_tail_ratio, group, tokenizer):  
         
         self.pkl_dir = pkl_dir
         self.rob_item = rob_item   
         self.max_chunk_len = max_chunk_len
         self.cut_head_ratio = cut_head_ratio
         self.cut_tail_ratio = cut_tail_ratio
+        self.tokenizer = tokenizer
         
         info_df = pd.read_pickle(info_file)
         print('Overal data size: {}'.format(len(info_df)))
@@ -83,7 +82,7 @@ class DocDataset(Dataset):
             chunk_tokens = tokens[(self.max_chunk_len-2) * i : (self.max_chunk_len-2) * (i+1)]
             chunk_tokens.insert(0, "[CLS]")
             chunk_tokens.append("[SEP]")          
-            chunk_tokens_ids = bert_tokenizer.convert_tokens_to_ids(chunk_tokens)
+            chunk_tokens_ids = self.tokenizer.convert_tokens_to_ids(chunk_tokens)
                      
             attn_masks = [1] * len(chunk_tokens_ids)         
             # Pad the last chunk
@@ -93,8 +92,7 @@ class DocDataset(Dataset):
                 
             token_type_ids = [0] * self.max_chunk_len       
             assert len(chunk_tokens_ids) == self.max_chunk_len and len(attn_masks) == self.max_chunk_len
-                 
-            
+                         
             doc[i] = torch.cat((torch.LongTensor(chunk_tokens_ids).unsqueeze(0),
                                 torch.LongTensor(attn_masks).unsqueeze(0),
                                 torch.LongTensor(token_type_ids).unsqueeze(0)), dim=0)
