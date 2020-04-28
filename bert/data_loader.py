@@ -117,7 +117,7 @@ class PadDoc:
         # x[0].shape = [num_chunks, 3, max_chunk_len]
         sorted_batch = sorted(batch, key=lambda x: x[0].shape[0], reverse=True)  # 
         
-		# Pad doc within batch
+        # Pad doc within batch       		
         docs = [x[0] for x in sorted_batch]
         docs_padded = nn.utils.rnn.pad_sequence(docs, batch_first=True)
         

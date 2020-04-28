@@ -47,7 +47,7 @@ class BertLinear(BertPreTrainedModel):
                                       attention_mask = doc[i,:self.bert.config.n_chunks,1], 
                                       token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
             else:
-                zeros = torch.zeros((self.bert.config.n_chunks - doc.shape[1], doc.shape[3]), dtype=torch.long)
+                zeros = torch.zeros((self.bert.config.n_chunks - doc.shape[1], doc.shape[3]), dtype=torch.long).cuda()
                 pooled[i] = self.bert(input_ids = torch.cat((doc[i,:,0], zeros), dim=0),
                                       attention_mask = torch.cat((doc[i,:,1], zeros), dim=0),
                                       token_type_ids = torch.cat((doc[i,:,2], zeros), dim=0))[1]

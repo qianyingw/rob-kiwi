@@ -99,7 +99,7 @@ pars = list(model.named_parameters())
 #    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
     
 n_pars = sum(p.numel() for p in model.parameters())
-print(model)
+#print(model)
 print("Number of parameters: {}".format(n_pars))
 
 #%% Optimizer & Scheduler & Criterion
