@@ -42,11 +42,16 @@ class BertLinear(BertPreTrainedModel):
         for i in range(batch_size):
             # Output of BertModel: (last_hidden_state, pooler_output, hidden_states, attentions)
             # Last layer hidden-state of the first token of the sequence (classification token)
-            pooled[i] = self.bert(input_ids = doc[i,:self.bert.config.n_chunks,0], 
-                                  attention_mask = doc[i,:self.bert.config.n_chunks,1], 
-                                  token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
-        
-        
+            if doc.shape[1] > self.bert.config.n_chunks:
+                pooled[i] = self.bert(input_ids = doc[i,:self.bert.config.n_chunks,0], 
+                                      attention_mask = doc[i,:self.bert.config.n_chunks,1], 
+                                      token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
+            else:
+                zeros = torch.zeros((self.bert.config.n_chunks - doc.shape[1], doc.shape[3]), dtype=torch.long)
+                pooled[i] = self.bert(input_ids = torch.cat((doc[i,:,0], zeros), dim=0),
+                                      attention_mask = torch.cat((doc[i,:,1], zeros), dim=0),
+                                      token_type_ids = torch.cat((doc[i,:,2], zeros), dim=0))[1]
+                
         dp = self.dropout(pooled)  # [batch_size, n_chunks, hidden_size]
         dp = dp.view(batch_size, -1)  # [batch_size, n_chunks*hidden_size]
         out = self.fc(dp)  # [batch_size, num_labels]         

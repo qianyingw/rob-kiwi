@@ -93,11 +93,14 @@ pars = list(model.named_parameters())
 #print('\n==== First Transformer ====\n')
 #for p in pars[5:21]:
 #    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-
-print('\n==== Output Layer ====\n')
-for p in pars[-4:]:
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+#
+#print('\n==== Output Layer ====\n')
+#for p in pars[-4:]:
+#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
     
+n_pars = sum(p.numel() for p in model.parameters())
+print(model)
+print("Number of parameters: {}".format(n_pars))
 
 #%% Optimizer & Scheduler & Criterion
 optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
