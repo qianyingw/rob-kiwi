@@ -47,7 +47,7 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, threshol
     return scores
 
 #%% Evaluate   
-def evaluate(model, data_loader, optimizer, scheduler, criterion, metrics, threshold=0.5):
+def evaluate(model, data_loader, criterion, metrics, threshold=0.5):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
@@ -71,7 +71,7 @@ def evaluate(model, data_loader, optimizer, scheduler, criterion, metrics, thres
 
 #%% train_eval
     
-def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, metrics, args, restore_file=None):
+def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, criterion, metrics, args, restore_file=None):
     """
     
     """
@@ -88,11 +88,10 @@ def train_evaluate(model, train_iterator, valid_iterator, criterion, optimizer, 
     # Create args and output dictionary (for json output)
     output_dict = {'args': vars(args), 'prfs': {}}
     
-    for epoch in range(args.num_epochs):
-        
-        train_scores = train(model, train_iterator, criterion, optimizer, metrics, args.threshold)
+    for epoch in range(args.num_epochs):   
+        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, args.threshold)
         valid_scores = evaluate(model, valid_iterator, criterion, metrics, args.threshold)        
-        
+
         # Update output dictionary
         output_dict['prfs'][str('train_'+str(epoch+1))] = train_scores
         output_dict['prfs'][str('valid_'+str(epoch+1))] = valid_scores
