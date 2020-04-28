@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from transformers import BertConfig, BertTokenizer, AdamW
 
-os.chdir('/home/qwang/rob/rob-kiwi/bert')
+#os.chdir('/home/qwang/rob/rob-kiwi/bert')
 from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
