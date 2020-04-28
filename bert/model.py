@@ -54,7 +54,7 @@ class BertLinear(BertPreTrainedModel):
 #                                      token_type_ids = torch.cat((doc[i,:,2], zeros), dim=0))[1]
                 
         dp = self.dropout(pooled)  # [batch_size, n_chunks, hidden_size]  
-        dp = torch.sum(dp, dim=1)  # [batch_size, hidden_size]
+        dp = dp.sum(dim=1) # [batch_size, hidden_size]
         
         # dp = dp.view(batch_size, -1)  # [batch_size, n_chunks*hidden_size]
         
