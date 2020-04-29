@@ -37,7 +37,9 @@ class BertLinear(BertPreTrainedModel):
         batch_size = doc.shape[0]        
         num_chunks = doc.shape[1]
         
-        pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=torch.float)
+        # pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=torch.float)
+        pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=doc.dtype)
+
         for i in range(batch_size):
             pooled[i] = self.bert(input_ids = doc[i,:,0], 
                                   attention_mask = doc[i,:,1], 
@@ -60,8 +62,8 @@ class BertLinear(BertPreTrainedModel):
 #                                      token_type_ids = torch.cat((doc[i,:,2], zeros), dim=0))[1]
                 
         dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
-        dp = dp.sum(dim=1) # [batch_size, hidden_size]
         
+        dp = dp.sum(dim=1) # [batch_size, hidden_size]
         # dp = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
         
         
