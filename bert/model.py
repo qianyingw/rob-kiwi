@@ -35,15 +35,21 @@ class BertLinear(BertPreTrainedModel):
             
         """    
         batch_size = doc.shape[0]        
-        num_chunks = doc.shape[1]
+#        num_chunks = doc.shape[1]
         
         # pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=torch.float)
-        pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=doc.dtype)
+#        pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=doc.dtype)
 
-        for i in range(batch_size):
-            pooled[i] = self.bert(input_ids = doc[i,:,0], 
-                                  attention_mask = doc[i,:,1], 
-                                  token_type_ids = doc[i,:,2])[1]
+
+        pooled = self.bert(input_ids = doc[0,:,0], 
+                           attention_mask = doc[0,:,1], 
+                           token_type_ids = doc[0,:,2])[1].unsqueeze(0) 
+            
+        for i in range(batch_size-1):
+            pool_i = self.bert(input_ids = doc[i+1,:,0], 
+                               attention_mask = doc[i+1,:,1], 
+                               token_type_ids = doc[i+1,:,2])[1]
+            pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
 
         # Actual n_chunks vary in different batches, but dimension at FC layer needs to be same for each batch
         # so we set "n_chunks" same over all batches. Hence, last part of some docs might be cut off
