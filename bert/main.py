@@ -7,6 +7,8 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
+#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+
 import random
 
 import torch
@@ -17,7 +19,7 @@ from torch.utils.data import DataLoader
 
 from transformers import BertConfig, BertTokenizer, AdamW
 
-#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+
 from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc

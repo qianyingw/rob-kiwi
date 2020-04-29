@@ -35,28 +35,34 @@ class BertLinear(BertPreTrainedModel):
             
         """    
         batch_size = doc.shape[0]        
-        # num_chunks = doc.shape[1]
+        num_chunks = doc.shape[1]
         
+        pooled = torch.zeros((batch_size, num_chunks, self.bert.config.hidden_size), dtype=torch.float)
+        for i in range(batch_size):
+            pooled[i] = self.bert(input_ids = doc[i,:,0], 
+                                  attention_mask = doc[i,:,1], 
+                                  token_type_ids = doc[i,:,2])[1]
+
         # Actual n_chunks vary in different batches, but dimension at FC layer needs to be same for each batch
         # so we set "n_chunks" same over all batches. Hence, last part of some docs might be cut off
-        pooled = torch.zeros((batch_size, self.bert.config.n_chunks, self.bert.config.hidden_size), dtype=torch.float)
-        for i in range(batch_size):
+#        pooled = torch.zeros((batch_size, self.bert.config.n_chunks, self.bert.config.hidden_size), dtype=torch.float)
+#        for i in range(batch_size):
             # Output of BertModel: (last_hidden_state, pooler_output, hidden_states, attentions)
             # Last layer hidden-state of the first token of the sequence (classification token)
 #            if doc.shape[1] > self.bert.config.n_chunks:
-            pooled[i] = self.bert(input_ids = doc[i,:self.bert.config.n_chunks,0], 
-                                  attention_mask = doc[i,:self.bert.config.n_chunks,1], 
-                                  token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
+#            pooled[i] = self.bert(input_ids = doc[i,:self.bert.config.n_chunks,0], 
+#                                  attention_mask = doc[i,:self.bert.config.n_chunks,1], 
+#                                  token_type_ids = doc[i,:self.bert.config.n_chunks,2])[1]
 #            else:
 #                zeros = torch.zeros((self.bert.config.n_chunks - doc.shape[1], doc.shape[3]), dtype=torch.long).cuda()
 #                pooled[i] = self.bert(input_ids = torch.cat((doc[i,:,0], zeros), dim=0),
 #                                      attention_mask = torch.cat((doc[i,:,1], zeros), dim=0),
 #                                      token_type_ids = torch.cat((doc[i,:,2], zeros), dim=0))[1]
                 
-        dp = self.dropout(pooled)  # [batch_size, n_chunks, hidden_size]  
+        dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
         dp = dp.sum(dim=1) # [batch_size, hidden_size]
         
-        # dp = dp.view(batch_size, -1)  # [batch_size, n_chunks*hidden_size]
+        # dp = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
         
         
         out = self.fc(dp)  # [batch_size, num_labels]         
