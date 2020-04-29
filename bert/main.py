@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+os.chdir('/home/qwang/rob/rob-kiwi/bert')
 
 import random
 
@@ -81,6 +81,8 @@ config.num_labels = args.num_labels
 config.output_attentions = False
 config.output_hidden_states = False
 config.n_chunks = args.n_chunks
+config.freeze_bert = args.freeze_bert
+config.unfreeze_bert_last = args.unfreeze_bert_last
 
 model = BertLinear(config)
 #print(model)
@@ -100,7 +102,7 @@ pars = list(model.named_parameters())
 #for p in pars[-4:]:
 #    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
     
-n_pars = sum(p.numel() for p in model.parameters())
+n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
 #print(model)
 print("Number of parameters: {}".format(n_pars))
 

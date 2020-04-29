@@ -71,6 +71,8 @@ def get_args():
     # BERT
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
     parser.add_argument('--n_chunks', nargs="?", type=int, default=8, help='Max number of text chunks in bert model')
+    parser.add_argument('--freeze_bert', nargs="?", type=str2bool, default=True, help='Freeze bert model')
+    parser.add_argument('--unfreeze_bert_last', nargs="?", type=str2bool, default=False, help='Unfreeze last encoder layer and pooler layer of bert')
     
     args = parser.parse_args()
     

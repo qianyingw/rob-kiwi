@@ -25,7 +25,18 @@ class BertLinear(BertPreTrainedModel):
         self.fc = nn.Linear(bert_config.hidden_size, bert_config.num_labels)
         # self.fc = nn.Linear(bert_config.hidden_size * bert_config.n_chunks, bert_config.num_labels)
         # self.init_weights()
-    
+        
+        # Freeze bert
+        if bert_config.freeze_bert == True:
+            for param in self.bert.parameters():
+                param.requires_grad = False 
+                
+            # Unfreeze last encoder layer
+            if bert_config.unfreeze_bert_last == True:
+                for name, param in self.bert.named_parameters():
+                    if "encoder.layer.11" in name or "pooler" in name:
+                        param.requires_grad = True
+     
     def forward(self, doc):
         """
         Input:
