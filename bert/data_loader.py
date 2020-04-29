@@ -72,9 +72,13 @@ class DocDataset(Dataset):
         # Split tokens into chunks
         n_chunks = len(tokens) // (self.max_chunk_len - 2)
         if len(tokens) % (self.max_chunk_len - 2) != 0:
-            n_chunks += 1
+            n_chunks += 1           
+        
+        if n_chunks > 20:
+            tokens = tokens[:self.max_chunk_len*20]
+            n_chunks = 20
             
-#        assert n_chunks <= 20, "The document is too large. Try to increase cut_head/tail_ratio."
+        assert n_chunks <= 20, "The document is too large. Try to increase cut_head/tail_ratio."
         
         # Document tensor
         doc = torch.zeros((n_chunks, 3, self.max_chunk_len), dtype=torch.long)
