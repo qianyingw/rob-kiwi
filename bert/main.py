@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+os.chdir('/home/qwang/rob/rob-kiwi/bert')
 
 import random
 
@@ -55,22 +55,22 @@ else:
 #%% Create dataset and data loader  
 bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 
-train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, 
-                       rob_item=args.rob_item, max_chunk_len=args.max_chunk_len,
+train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
+                       max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
                        group='train', tokenizer=bert_tokenizer)
 
 
-valid_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, 
-                       rob_item=args.rob_item, max_chunk_len=args.max_chunk_len,
+valid_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
+                       max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
                        group='valid', tokenizer=bert_tokenizer)
 
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
 valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
 
-#test_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, 
-#                      rob_item=args.rob_item, max_chunk_len=args.max_chunk_len,
+#test_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item,  
+#                      max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
 #                      cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
 #                      group='test', tokenizer=bert_tokenizer)
 #test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
@@ -80,7 +80,6 @@ config = BertConfig.from_pretrained('bert-base-uncased')
 config.num_labels = args.num_labels
 config.output_attentions = False
 config.output_hidden_states = False
-config.n_chunks = args.n_chunks
 config.freeze_bert = args.freeze_bert
 config.unfreeze_bert_last = args.unfreeze_bert_last
 
