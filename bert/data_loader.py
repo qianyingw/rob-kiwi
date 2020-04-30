@@ -13,7 +13,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
-
+import sklearn
 
    
 #%%
@@ -29,16 +29,23 @@ class DocDataset(Dataset):
         label
         
     """
-    def __init__(self, info_file, pkl_dir, rob_item, max_chunk_len, cut_head_ratio, cut_tail_ratio, group, tokenizer):  
+    def __init__(self, info_file, pkl_dir, rob_item, max_chunk_len, max_n_chunk, cut_head_ratio, cut_tail_ratio, group, tokenizer):  
         
         self.pkl_dir = pkl_dir
         self.rob_item = rob_item   
         self.max_chunk_len = max_chunk_len
+        self.max_n_chunk = max_n_chunk
         self.cut_head_ratio = cut_head_ratio
         self.cut_tail_ratio = cut_tail_ratio
         self.tokenizer = tokenizer
         
         info_df = pd.read_pickle(info_file)
+        
+#        ########## test only ########## 
+#        info_df = sklearn.utils.shuffle(info_df)
+#        info_df = info_df[:100]
+#        ###############################    
+        
         print('Overal data size: {}'.format(len(info_df)))
                
         if group:
@@ -74,11 +81,11 @@ class DocDataset(Dataset):
         if len(tokens) % (self.max_chunk_len - 2) != 0:
             n_chunks += 1           
         
-        if n_chunks > 20:
-            tokens = tokens[:self.max_chunk_len*20]
-            n_chunks = 20
-            
-        assert n_chunks <= 20, "The document is too large. Try to increase cut_head/tail_ratio."
+        # Limit number of chunks
+        if n_chunks > self.max_n_chunk:
+            tokens = tokens[:self.max_chunk_len*self.max_n_chunk]
+            n_chunks = self.max_n_chunk  
+        assert n_chunks <= self.max_n_chunk, "The document is too large. Try to increase cut_head/tail_ratio."
         
         # Document tensor
         doc = torch.zeros((n_chunks, 3, self.max_chunk_len), dtype=torch.long)
