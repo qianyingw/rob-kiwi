@@ -47,7 +47,6 @@ class BertLinear(BertPreTrainedModel):
         """    
         batch_size = doc.shape[0]        
         
-        ###### No limitation for max_n_chunks #######
         pooled = self.bert(input_ids = doc[0,:,0], 
                            attention_mask = doc[0,:,1], 
                            token_type_ids = doc[0,:,2])[1].unsqueeze(0) 
