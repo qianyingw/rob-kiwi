@@ -10,11 +10,12 @@ import os
 import json
 from tqdm import tqdm
 import torch
+import torch.nn as nn
 
 import utils
 
 #%% Train
-def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, threshold=0.5):
+def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, threshold=0.5):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
@@ -24,9 +25,10 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
     with tqdm(total=len_iter) as progress_bar:
         for batch in data_loader:
             
+            optimizer.zero_grad()
+            
             batch = tuple(t.to(device) for t in batch)           
             batch_doc, batch_label, batch_len = batch    
-            model.zero_grad() 
             
             preds = model(batch_doc)  # preds.shape = [batch_size, num_labels]
             
@@ -34,7 +36,7 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
             epoch_scores = metrics(preds, batch_label, threshold)  # dictionary of 5 metric scores
             
             loss.backward()
-            # nn.utils.clip_grad_norm_(model.parameters(), 1.0)  # prevent exploding gradients
+            nn.utils.clip_grad_norm_(model.parameters(), clip)  # prevent exploding gradients
             optimizer.step()
             scheduler.step()
                     
@@ -66,9 +68,13 @@ def evaluate(model, data_loader, criterion, metrics, device, threshold=0.5):
                 epoch_scores = metrics(preds, batch_label, threshold)
                 
                 scores['loss'] += loss.item()
-            for key, value in epoch_scores.items():               
-                scores[key] += value        
-            progress_bar.update(1)  # update progress bar        
+                for key, value in epoch_scores.items():               
+                    scores[key] += value        
+                progress_bar.update(1)  # update progress bar   
+                
+    for key, value in scores.items():
+        scores[key] = value / len_iter   
+
     return scores
 
 #%% train_eval
@@ -91,7 +97,7 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     output_dict = {'args': vars(args), 'prfs': {}}
     
     for epoch in range(args.num_epochs):   
-        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.threshold)
+        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.threshold)
         valid_scores = evaluate(model, valid_iterator, criterion, metrics, device, args.threshold)        
 
         # Update output dictionary
