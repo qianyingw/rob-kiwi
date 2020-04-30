@@ -35,7 +35,8 @@ def get_args():
     parser.add_argument('--num_epochs', nargs="?", type=int, default=2, help='Number of epochs')    
     parser.add_argument('--train_ratio', nargs="?", type=float, default=0.8, help='Ratio of training set')
     parser.add_argument('--val_ratio', nargs="?", type=float, default=0.1, help='Ratio of validation set')
-    parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='Learning rate of AdamW')
+    parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='AdamW learning rate')
+    parser.add_argument('--clip', nargs="?", type=float, default=0.1, help='Gradient clipping')
     
     parser.add_argument('--info_file', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_info_a.pkl", help='Path of info pickle file')
     parser.add_argument('--pkl_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_str", help='Directory of pickle files')
@@ -70,7 +71,7 @@ def get_args():
 
     # BERT
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
-    parser.add_argument('--n_chunks', nargs="?", type=int, default=8, help='Max number of text chunks in bert model')
+    parser.add_argument('--max_n_chunk', nargs="?", type=int, default=20, help='Max number of text chunks')
     parser.add_argument('--freeze_bert', nargs="?", type=str2bool, default=True, help='Freeze bert model')
     parser.add_argument('--unfreeze_bert_last', nargs="?", type=str2bool, default=False, help='Unfreeze last encoder layer and pooler layer of bert')
     
