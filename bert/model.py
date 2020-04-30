@@ -56,28 +56,15 @@ class BertLinear(BertPreTrainedModel):
                                token_type_ids = doc[i+1,:,2])[1]
             pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
  
-    
-#        ###### Limitation for max_n_chunks #######
-#        # Actual n_chunks vary in different batches, but dimension at FC layer needs to be same for each batch
-#        # so we set "n_chunks" same over all batches. Hence, last part of some docs might be cut off
-#        pooled = self.bert(input_ids = doc[0,:self.bert.config.n_chunks,0], 
-#                           attention_mask = doc[0,:self.bert.config.n_chunks,1], 
-#                           token_type_ids = doc[0,:self.bert.config.n_chunks,2])[1].unsqueeze(0)      
-#        for i in range(batch_size-1):
-#            # Output of BertModel: (last_hidden_state, pooler_output, hidden_states, attentions)
-#            # Last layer hidden-state of the first token of the sequence (classification token)
-#            pool_i = self.bert(input_ids = doc[i+1,:self.bert.config.n_chunks,0], 
-#                               attention_mask = doc[i+1,:self.bert.config.n_chunks,1], 
-#                               token_type_ids = doc[i+1,:self.bert.config.n_chunks,2])[1]
-#            pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
-
                 
         dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
-        
-        dp = dp.sum(dim=1) # [batch_size, hidden_size]
-        # dp = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
-        
-        
+        # concat = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
+        if self.bert_config.linear_max == True:
+            dp = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
+        else:
+            dp = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
+        # dp = dp.sum(dim=1) # [batch_size, hidden_size]
+
         out = self.fc(dp)  # [batch_size, num_labels]         
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
              

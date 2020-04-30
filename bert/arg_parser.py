@@ -58,7 +58,7 @@ def get_args():
 
     # Model
     parser.add_argument('--net_type', nargs="?", type=str, default='bert_linear', 
-                        choices=['bert_linear', 'bert_lstm', 'bert_transformer'], 
+                        choices=['bert_linear_max', 'bert_linear_avg', 'bert_lstm', 'bert_transformer'], 
                         help="Different network models")
     
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=True, help='Assign class weights for imbalanced data')

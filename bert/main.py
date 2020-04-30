@@ -83,7 +83,12 @@ config.output_hidden_states = False
 config.freeze_bert = args.freeze_bert
 config.unfreeze_bert_last = args.unfreeze_bert_last
 
-model = BertLinear(config)
+if args.net_type == 'bert_linear_max':
+    config.linear_max = True
+    model = BertLinear(config)
+if args.net_type == 'bert_linear_avg':
+    config.linear_max = False
+    model = BertLinear(config)
 #print(model)
 
 # Demonstrate some pars
