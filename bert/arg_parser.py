@@ -37,6 +37,7 @@ def get_args():
     parser.add_argument('--val_ratio', nargs="?", type=float, default=0.1, help='Ratio of validation set')
     parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='AdamW learning rate')
     parser.add_argument('--clip', nargs="?", type=float, default=0.1, help='Gradient clipping')
+    parser.add_argument('--accum_step', nargs="?", type=int, default=4, help='Number of steps for gradient accumulation')
     
     parser.add_argument('--info_file', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_info_a.pkl", help='Path of info pickle file')
     parser.add_argument('--pkl_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_str", help='Directory of pickle files')
@@ -57,7 +58,7 @@ def get_args():
                         help='Risk of bias item')
 
     # Model
-    parser.add_argument('--net_type', nargs="?", type=str, default='bert_linear', 
+    parser.add_argument('--net_type', nargs="?", type=str, default='bert_linear_max', 
                         choices=['bert_linear_max', 'bert_linear_avg', 'bert_lstm', 'bert_transformer'], 
                         help="Different network models")
     

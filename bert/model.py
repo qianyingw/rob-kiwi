@@ -59,7 +59,7 @@ class BertLinear(BertPreTrainedModel):
                 
         dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
         # concat = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
-        if self.bert_config.linear_max == True:
+        if self.bert.config.linear_max == True:
             dp = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
         else:
             dp = torch.mean(dp, dim=1)  # [batch_size, hidden_size]

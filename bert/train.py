@@ -15,39 +15,48 @@ import torch.nn as nn
 import utils
 
 #%% Train
-def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, threshold=0.5):
+
+def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, accum_step, threshold=0.5):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
     
     model.train()
     
+    optimizer.zero_grad()
     with tqdm(total=len_iter) as progress_bar:
-        for batch in data_loader:
-            
-            optimizer.zero_grad()
+        for i, batch in enumerate(data_loader):
             
             batch = tuple(t.to(device) for t in batch)           
             batch_doc, batch_label, batch_len = batch    
             
             preds = model(batch_doc)  # preds.shape = [batch_size, num_labels]
             
-            loss = criterion(preds, batch_label)       
+            loss = criterion(preds, batch_label)    
+            scores['loss'] += loss.item()
             epoch_scores = metrics(preds, batch_label, threshold)  # dictionary of 5 metric scores
+            for key, value in epoch_scores.items():               
+                scores[key] += value  
             
+            loss = loss / accum_step  # loss gradients are accumulated by loss.backward() so we need to ave accumulated loss gradients
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), clip)  # prevent exploding gradients
-            optimizer.step()
-            scheduler.step()
-                    
-            scores['loss'] += loss.item()
-            for key, value in epoch_scores.items():               
-                scores[key] += value        
-            progress_bar.update(1)  # update progress bar 
+                      
+            # Gradient accumulation    
+            if (i+1) % accum_step == 0:
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+            # Update progress bar                          
+            progress_bar.update(1)  
     
     for key, value in scores.items():
         scores[key] = value / len_iter   
     return scores
+
+
+
+
 
 #%% Evaluate   
 def evaluate(model, data_loader, criterion, metrics, device, threshold=0.5):
@@ -97,7 +106,7 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     output_dict = {'args': vars(args), 'prfs': {}}
     
     for epoch in range(args.num_epochs):   
-        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.threshold)
+        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.accum_step, args.threshold)
         valid_scores = evaluate(model, valid_iterator, criterion, metrics, device, args.threshold)        
 
         # Update output dictionary
