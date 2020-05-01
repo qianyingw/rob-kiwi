@@ -81,7 +81,7 @@ config.num_labels = args.num_labels
 config.output_attentions = False
 config.output_hidden_states = False
 config.freeze_bert = args.freeze_bert
-config.unfreeze_bert_last = args.unfreeze_bert_last
+config.unfreeze_layer = args.unfreeze_layer
 
 if args.net_type == 'bert_linear_max':
     config.linear_max = True
@@ -110,6 +110,7 @@ n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
 #print(model)
 print("Number of parameters: {}".format(n_pars))
 
+        
 #%% Optimizer & Scheduler & Criterion
 optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
 model = model.to(device)

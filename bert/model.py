@@ -32,9 +32,14 @@ class BertLinear(BertPreTrainedModel):
                 param.requires_grad = False 
                 
             # Unfreeze last encoder layer
-            if bert_config.unfreeze_bert_last == True:
+            if bert_config.unfreeze_layer == 0:
                 for name, param in self.bert.named_parameters():
-                    if "encoder.layer.11" in name or "pooler" in name:
+                    if "pooler" in name:
+                        param.requires_grad = True
+            else:
+                layer_name = "encoder.layer." + str(bert_config.unfreeze_layer-1)
+                for name, param in self.bert.named_parameters():
+                    if layer_name in name or "pooler" in name:
                         param.requires_grad = True
      
     def forward(self, doc):
