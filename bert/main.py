@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+# os.chdir('/home/qwang/rob/rob-kiwi/bert')
 
 import random
 
@@ -83,12 +83,14 @@ config.output_hidden_states = False
 config.freeze_bert = args.freeze_bert
 config.unfreeze_layer = args.unfreeze_layer
 
-if args.net_type == 'bert_linear_max':
+if args.net_type == 'bert_linmax':
     config.linear_max = True
     model = BertLinear(config)
-if args.net_type == 'bert_linear_avg':
+if args.net_type == 'bert_linavg':
     config.linear_max = False
     model = BertLinear(config)
+if args.net_type == 'bert_lstm':
+    model = BertLSTM(config)
 #print(model)
 
 # Demonstrate some pars
