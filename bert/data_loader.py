@@ -76,6 +76,11 @@ class DocDataset(Dataset):
         for l in sent_ls:
             tokens = tokens + l[0].split(" ")
             
+        # Convert tokens back to plain text
+        text = " ".join(tokens)
+        # Convert text to bert tokens by WordPiece
+        tokens = self.tokenizer.tokenize(text)
+        
         # Split tokens into chunks
         n_chunks = len(tokens) // (self.max_chunk_len - 2)
         if len(tokens) % (self.max_chunk_len - 2) != 0:
@@ -92,9 +97,9 @@ class DocDataset(Dataset):
         for i in range(n_chunks):
             chunk_tokens = tokens[(self.max_chunk_len-2) * i : (self.max_chunk_len-2) * (i+1)]
             chunk_tokens.insert(0, "[CLS]")
-            chunk_tokens.append("[SEP]")          
+            chunk_tokens.append("[SEP]")              
             chunk_tokens_ids = self.tokenizer.convert_tokens_to_ids(chunk_tokens)
-                     
+                  
             attn_masks = [1] * len(chunk_tokens_ids)         
             # Pad the last chunk
             while len(chunk_tokens_ids) < self.max_chunk_len:
@@ -117,7 +122,7 @@ class DocDataset(Dataset):
     def cls_weight(self):
         df = self.info_df   
         n_pos = len(df[df[self.rob_item]==1])
-        n_neg = len(df[df[self.rob_item]==0])     
+        n_neg = len(df[df[self.rob_item]==0])   
         return [1/n_pos, 1/n_neg]
         
 
