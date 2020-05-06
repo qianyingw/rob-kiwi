@@ -18,13 +18,13 @@ from torch.utils.data import DataLoader
 
 
 from transformers import BertConfig, BertTokenizer, AdamW
-
+from transformers import AlbertConfig, AlbertTokenizer
 
 from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
 
-from model import BertLinear, BertLSTM
+from model import BertLinear, BertLSTM, AlbertLinear, AlbertLSTM
 from train import train_evaluate
 
 
@@ -51,19 +51,79 @@ elif torch.cuda.device_count() == 1:
 else:
     device = torch.device('cpu')     
 
-        
-#%% Create dataset and data loader  
-bert_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
 
+#%% Tokenizer & Model
+    
+if args.net_type.split('_')[0] == "bert":
+    # bert tokenizer
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    # bert configuration
+    config = BertConfig.from_pretrained('bert-base-uncased')    
+    config.freeze_bert = args.freeze_bert
+    config.unfreeze_layer = args.unfreeze_layer
+
+if args.net_type.split('_')[0] == "albert": 
+    # albert tokenizer
+    tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2', do_lower_case=True)
+    # albert configuration
+    config = AlbertConfig.from_pretrained('albert-base-v2')  # albert-large-v2'
+
+
+# Common config    
+config.num_labels = args.num_labels
+config.output_attentions = False
+config.output_hidden_states = False   
+
+# For BertLinear/AlbertLinear
+if args.net_type.split('_')[1] == "linmax":
+    config.linear_max = True
+else:
+    config.linear_max = False 
+    
+if args.net_type in ['bert_linmax', 'bert_linavg']:
+    model = BertLinear(config)
+if args.net_type == 'bert_lstm':
+    model = BertLSTM(config)
+if args.net_type in ['albert_linmax', 'albert_linavg']:
+    model = AlbertLinear(config)  
+if args.net_type == 'albert_lstm':
+    model = AlbertLSTM(config)
+    
+#print(model)
+
+# Demonstrate some pars
+pars = list(model.named_parameters())
+print('\nBERT has {} named parameters.\n'.format(len(pars)))
+print('==== Embedding Layer ====\n')
+for p in pars[0:5]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+    
+print('\n==== First Transformer ====\n')
+for p in pars[5:21]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+
+print('\n==== Output Layer ====\n')
+for p in pars[-4:]:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+    
+n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
+#print(model)
+print("Number of parameters: {}".format(n_pars))
+
+for p in pars:
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+    
+
+#%% Create dataset and data loader  
 train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
                        max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
-                       group='train', tokenizer=bert_tokenizer)
+                       group='train', tokenizer=tokenizer)
 #temp = train_set[0][0]
 valid_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
                        max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
-                       group='valid', tokenizer=bert_tokenizer)
+                       group='valid', tokenizer=tokenizer)
 
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
 valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
@@ -73,44 +133,6 @@ valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, n
 #                      cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
 #                      group='test', tokenizer=bert_tokenizer)
 #test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
-
-#%% Model
-config = BertConfig.from_pretrained('bert-base-uncased')
-config.num_labels = args.num_labels
-config.output_attentions = False
-config.output_hidden_states = False
-config.freeze_bert = args.freeze_bert
-config.unfreeze_layer = args.unfreeze_layer
-
-if args.net_type == 'bert_linmax':
-    config.linear_max = True
-    model = BertLinear(config)
-if args.net_type == 'bert_linavg':
-    config.linear_max = False
-    model = BertLinear(config)
-if args.net_type == 'bert_lstm':
-    model = BertLSTM(config)
-#print(model)
-
-# Demonstrate some pars
-pars = list(model.named_parameters())
-#print('\nBERT has {} named parameters.\n'.format(len(pars)))
-#print('==== Embedding Layer ====\n')
-#for p in pars[0:5]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-#    
-#print('\n==== First Transformer ====\n')
-#for p in pars[5:21]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-#
-#print('\n==== Output Layer ====\n')
-#for p in pars[-4:]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-    
-n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
-#print(model)
-print("Number of parameters: {}".format(n_pars))
-
         
 #%% Optimizer & Scheduler & Criterion
 optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)

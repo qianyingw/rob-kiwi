@@ -58,8 +58,9 @@ def get_args():
                         help='Risk of bias item')
 
     # Model
-    parser.add_argument('--net_type', nargs="?", type=str, default='bert_lstm', 
-                        choices=['bert_linmax', 'bert_linavg', 'bert_lstm'], 
+    parser.add_argument('--net_type', nargs="?", type=str, default='albert_lstm', 
+                        choices=['bert_linmax', 'bert_linavg', 'bert_lstm',
+                                 'albert_linmax', 'albert_linavg', 'albert_lstm'], 
                         help="Different network models")
     
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=True, help='Assign class weights for imbalanced data')
@@ -74,7 +75,7 @@ def get_args():
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
     parser.add_argument('--max_n_chunk', nargs="?", type=int, default=20, help='Max number of text chunks')
     parser.add_argument('--freeze_bert', nargs="?", type=str2bool, default=True, help='Freeze bert model')
-    parser.add_argument('--unfreeze_layer', nargs="?", type=int, default=999, 
+    parser.add_argument('--unfreeze_layer', nargs="?", type=int, default=12, 
                         help='Layer unfreezed in bert encoder [0: pooler] [i(1-12): encoder.layer.(i-1) & pooler] [i(<0 or >12): all freezed)]')
     
     args = parser.parse_args()
