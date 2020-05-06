@@ -59,8 +59,7 @@ train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=
                        max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
                        group='train', tokenizer=bert_tokenizer)
-
-
+#temp = train_set[0][0]
 valid_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
                        max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
                        cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,

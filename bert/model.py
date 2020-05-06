@@ -90,6 +90,7 @@ class BertLSTM(BertPreTrainedModel):
                             batch_first = True, bidirectional = False)
         
         self.fc = nn.Linear(bert_config.hidden_size, bert_config.num_labels)
+        self.tanh = nn.Tanh()
         # self.init_weights()
         
         # Freeze bert
@@ -143,6 +144,7 @@ class BertLSTM(BertPreTrainedModel):
         
         out = self.fc(h_n)  # [batch_size, num_labels]         
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
+        # out = self.tanh(out)   # [batch_size, num_labels]
         
         return out
     

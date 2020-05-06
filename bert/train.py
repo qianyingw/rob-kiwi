@@ -16,7 +16,7 @@ import utils
 
 #%% Train
 
-def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, accum_step, threshold=0.5):
+def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, accum_step, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
@@ -59,7 +59,7 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
 
 
 #%% Evaluate   
-def evaluate(model, data_loader, criterion, metrics, device, threshold=0.5):
+def evaluate(model, data_loader, criterion, metrics, device, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
