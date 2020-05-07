@@ -27,19 +27,13 @@ class BertLinear(BertPreTrainedModel):
         self.init_weights()
         
         # Freeze bert
-        if bert_config.freeze_bert == True:
-            for param in self.bert.parameters():
-                param.requires_grad = False               
-            # Unfreeze last encoder layer
-            if bert_config.unfreeze_layer == 0:
-                for name, param in self.bert.named_parameters():
-                    if "pooler" in name:
-                        param.requires_grad = True
-            if bert_config.unfreeze_layer >= 1 & bert_config.unfreeze_layer <= 12:
-                layer_name = "encoder.layer." + str(bert_config.unfreeze_layer-1)
-                for name, param in self.bert.named_parameters():
-                    if layer_name in name or "pooler" in name:
-                        param.requires_grad = True
+        if bert_config.freeze_model == "bert":
+            for name, param in self.bert.named_parameters():
+                param.requires_grad = False     
+        if bert_config.freeze_model == "bert_encoder":
+            for name, param in self.bert.named_parameters():
+                if "encoder" in name:
+                    param.requires_grad = False
      
     def forward(self, doc):
         """
@@ -94,20 +88,13 @@ class BertLSTM(BertPreTrainedModel):
         self.init_weights()
         
         # Freeze bert
-        if bert_config.freeze_bert == True:
-            for param in self.bert.parameters():
-                param.requires_grad = False               
-            # Unfreeze last encoder layer
-            if bert_config.unfreeze_layer == 0:
-                for name, param in self.bert.named_parameters():
-                    if "pooler" in name:
-                        param.requires_grad = True
-            if bert_config.unfreeze_layer >= 1 & bert_config.unfreeze_layer <= 12:
-                layer_name = "encoder.layer." + str(bert_config.unfreeze_layer-1)
-                for name, param in self.bert.named_parameters():
-                    if layer_name in name or "pooler" in name:
-                        param.requires_grad = True
-                        
+        if bert_config.freeze_model == "bert":
+            for name, param in self.bert.named_parameters():
+                param.requires_grad = False     
+        if bert_config.freeze_model == "bert_encoder":
+            for name, param in self.bert.named_parameters():
+                if "encoder" in name:
+                    param.requires_grad = False
     
     def forward(self, doc):
         """
@@ -161,6 +148,16 @@ class AlbertLinear(AlbertPreTrainedModel):
         self.fc = nn.Linear(albert_config.hidden_size, albert_config.num_labels)
         # self.fc = nn.Linear(albert_config.hidden_size * albert_config.n_chunks, albert_config.num_labels)
         self.init_weights()
+        
+        # Freeze albert
+        if albert_config.freeze_model == "albert":
+            for name, param in self.albert.named_parameters():
+                param.requires_grad = False     
+        if albert_config.freeze_model == "albert_encoder":
+            for name, param in self.albert.named_parameters():
+                if "encoder" in name:
+                    param.requires_grad = False
+        
      
     def forward(self, doc):
         """
@@ -211,7 +208,16 @@ class AlbertLSTM(AlbertPreTrainedModel):
         
         self.fc = nn.Linear(albert_config.hidden_size, albert_config.num_labels)
         self.tanh = nn.Tanh()
-        self.init_weights()                        
+        self.init_weights()        
+
+        # Freeze albert
+        if albert_config.freeze_model == "albert":
+            for name, param in self.albert.named_parameters():
+                param.requires_grad = False     
+        if albert_config.freeze_model == "albert_encoder":
+            for name, param in self.albert.named_parameters():
+                if "encoder" in name:
+                    param.requires_grad = False        
     
     def forward(self, doc):
         """

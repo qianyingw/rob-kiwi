@@ -70,14 +70,18 @@ def get_args():
     parser.add_argument('--cut_head_ratio', nargs="?", type=float, default=0.1, help='Ratio of tokens cut from head')
     parser.add_argument('--cut_tail_ratio', nargs="?", type=float, default=0.1, help='Ratio of tokens cut from tail')
     
-
-    # BERT
+    # BERT/ALBERT
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
     parser.add_argument('--max_n_chunk', nargs="?", type=int, default=20, help='Max number of text chunks')
-    parser.add_argument('--freeze_bert', nargs="?", type=str2bool, default=True, help='Freeze bert model')
-    parser.add_argument('--unfreeze_layer', nargs="?", type=int, default=12, 
-                        help='Layer unfreezed in bert encoder [0: pooler] [i(1-12): encoder.layer.(i-1) & pooler] [i(<0 or >12): all freezed)]')
+    parser.add_argument('--freeze_model', nargs="?", type=str, default='bert_encoder', 
+                        choices=['bert', 'bert_encoder', 
+                                 'albert', 'albert_encoder'], 
+                        help='Options of freezing bert/albert parameters')
+    parser.add_argument('--num_hidden_layers', nargs="?", type=int, default=None, help='Number of encoder layers')
+    parser.add_argument('--num_attention_heads', nargs="?", type=int, default=None, help='Number of attention heads')
+    parser.add_argument('--hidden_size', nargs="?", type=int, default=None, help='Number of hidden units')
     
+   
     args = parser.parse_args()
     
     if args.args_json_path is None:
