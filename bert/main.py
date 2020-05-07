@@ -92,7 +92,15 @@ if args.net_type in ['albert_linmax', 'albert_linavg']:
     model = AlbertLinear(config)  
 if args.net_type == 'albert_lstm':
     model = AlbertLSTM(config)
-    
+
+
+if torch.cuda.device_count() > 1:
+    model.half()  # convert to FP16 on GPU
+
+for layer in model.modules():
+    if isinstance(layer, nn.BatchNorm1d):
+        layer.float()
+   
 # Demonstrate some pars
 #print(model)
 #pars = list(model.named_parameters())

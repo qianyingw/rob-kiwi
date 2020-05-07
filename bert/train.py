@@ -27,7 +27,11 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
     with tqdm(total=len_iter) as progress_bar:
         for i, batch in enumerate(data_loader):
             
-            batch = tuple(t.to(device) for t in batch)           
+            if device == torch.device("cpu"):
+                batch = tuple(t.to(device) for t in batch)  
+            else:
+                batch = tuple(t.to(device).half() for t in batch)
+                
             batch_doc, batch_label, batch_len = batch    
             
             preds = model(batch_doc)  # preds.shape = [batch_size, num_labels]
@@ -69,7 +73,11 @@ def evaluate(model, data_loader, criterion, metrics, device, threshold):
         with tqdm(total=len_iter) as progress_bar:
             for batch in data_loader:
                 
-                batch = tuple(t.to(device) for t in batch)
+                if device == torch.device("cpu"):
+                    batch = tuple(t.to(device) for t in batch)  
+                else:
+                    batch = tuple(t.to(device).half() for t in batch)
+                
                 batch_doc, batch_label, batch_len = batch          
                 preds = model(batch_doc)
                 
