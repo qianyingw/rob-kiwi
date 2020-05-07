@@ -96,10 +96,9 @@ if args.net_type == 'albert_lstm':
 
 if torch.cuda.device_count() > 1:
     model.half()  # convert to FP16 on GPU
-
-for layer in model.modules():
-    if isinstance(layer, nn.BatchNorm1d):
-        layer.float()
+    for layer in model.modules():
+        if isinstance(layer, nn.BatchNorm1d):
+            layer.float()
    
 # Demonstrate some pars
 #print(model)
