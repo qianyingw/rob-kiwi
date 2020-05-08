@@ -94,7 +94,7 @@ if args.net_type == 'albert_lstm':
     model = AlbertLSTM(config)
 
 
-if args.fp15 == True:
+if args.fp16 == True:
     model.half()  # convert to FP16 on GPU
     for layer in model.modules():
         if isinstance(layer, nn.BatchNorm1d):
