@@ -16,7 +16,7 @@ import utils
 
 #%% Train
 
-def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, accum_step, threshold):
+def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, clip, accum_step, fp16, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
@@ -30,7 +30,7 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
             batch_doc, batch_label, batch_len = batch
             batch_doc = batch_doc.to(device)
             batch_label = batch_label.to(device)                   
-            if device != torch.device("cpu"):
+            if fp16 == True:
                 batch_doc = batch_doc.to(device).half()   
             
             preds = model(batch_doc)  # preds.shape = [batch_size, num_labels]
@@ -62,7 +62,7 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
 
 
 #%% Evaluate   
-def evaluate(model, data_loader, criterion, metrics, device, threshold):
+def evaluate(model, data_loader, criterion, metrics, device, fp16, threshold):
     
     scores = {'loss': 0, 'accuracy': 0, 'f1': 0, 'recall': 0, 'precision': 0, 'specificity': 0}
     len_iter = len(data_loader)
@@ -75,7 +75,7 @@ def evaluate(model, data_loader, criterion, metrics, device, threshold):
                 batch_doc, batch_label, batch_len = batch
                 batch_doc = batch_doc.to(device)
                 batch_label = batch_label.to(device)                   
-                if device != torch.device("cpu"):
+                if fp16 == True:
                     batch_doc = batch_doc.to(device).half() 
                     
                 preds = model(batch_doc)
@@ -113,8 +113,8 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     output_dict = {'args': vars(args), 'prfs': {}}
     
     for epoch in range(args.num_epochs):   
-        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.accum_step, args.threshold)
-        valid_scores = evaluate(model, valid_iterator, criterion, metrics, device, args.threshold)        
+        train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.accum_step, args.fp16, args.threshold)
+        valid_scores = evaluate(model, valid_iterator, criterion, metrics, device, args.fp16, args.threshold)        
 
         # Update output dictionary
         output_dict['prfs'][str('train_'+str(epoch+1))] = train_scores
