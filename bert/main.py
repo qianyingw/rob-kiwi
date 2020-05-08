@@ -94,7 +94,7 @@ if args.net_type == 'albert_lstm':
     model = AlbertLSTM(config)
 
 
-if torch.cuda.device_count() > 1:
+if torch.cuda.device_count() > 0:
     model.half()  # convert to FP16 on GPU
     for layer in model.modules():
         if isinstance(layer, nn.BatchNorm1d):
