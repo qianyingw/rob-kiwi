@@ -44,8 +44,7 @@ def get_args():
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
     parser.add_argument('--exp_dir', nargs="?", type=str, default="/home/qwang/rob/bert", help='Folder of the experiment')
     parser.add_argument('--save_model', nargs="?", type=str2bool, default=False, help='Save model.pth.tar with best loss')
-    parser.add_argument('--fp16', nargs="?", type=str2bool, default=False, help='Train with half precision')
-       
+
     # RoB item
     parser.add_argument('--rob_item', nargs="?", type=str, default="RandomizationTreatmentControl", 
                         choices=['RandomizationTreatmentControl',

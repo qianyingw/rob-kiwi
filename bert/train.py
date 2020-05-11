@@ -30,8 +30,6 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
             batch_doc, batch_label, batch_len = batch
             batch_doc = batch_doc.to(device)
             batch_label = batch_label.to(device)                   
-            if fp16 == True:
-                batch_doc = batch_doc.to(device).half()   
             
             preds = model(batch_doc)  # preds.shape = [batch_size, num_labels]
             
@@ -59,8 +57,6 @@ def train(model, data_loader, optimizer, scheduler, criterion, metrics, device, 
 
 
 
-
-
 #%% Evaluate   
 def evaluate(model, data_loader, criterion, metrics, device, fp16, threshold):
     
@@ -75,8 +71,6 @@ def evaluate(model, data_loader, criterion, metrics, device, fp16, threshold):
                 batch_doc, batch_label, batch_len = batch
                 batch_doc = batch_doc.to(device)
                 batch_label = batch_label.to(device)                   
-                if fp16 == True:
-                    batch_doc = batch_doc.to(device).half() 
                     
                 preds = model(batch_doc)
                 

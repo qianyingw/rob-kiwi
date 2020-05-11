@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-# os.chdir('/home/qwang/rob/rob-kiwi/bert')
+#os.chdir('/home/qwang/rob/rob-kiwi/bert')
 
 import random
 
@@ -15,7 +15,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-
 
 from transformers import BertConfig, BertTokenizer, AdamW
 from transformers import AlbertConfig, AlbertTokenizer
@@ -94,12 +93,7 @@ if args.net_type == 'albert_lstm':
     model = AlbertLSTM(config)
 
 
-if args.fp16 == True:
-    model.half()  # convert to FP16 on GPU
-    for layer in model.modules():
-        if isinstance(layer, nn.BatchNorm1d):
-            layer.float()
-   
+  
 # Demonstrate some pars
 #print(model)
 #pars = list(model.named_parameters())
@@ -146,17 +140,17 @@ valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, n
 #                      group='test', tokenizer=bert_tokenizer)
 #test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
         
-#%% Optimizer & Scheduler & Criterion
-optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
-model = model.to(device)
+#%% 
 
-# Learning rate
+# Optimizer
+optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
+
+# Learning rate scheduler
 from transformers import get_linear_schedule_with_warmup
 total_steps = len(train_loader) * args.num_epochs
-# Learning rate scheduler
 scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
 
-# Weight balancing
+# Criterion (weight balancing)
 if args.weight_balance == True and torch.cuda.device_count() == 0:
     criterion = nn.CrossEntropyLoss(weight=torch.FloatTensor(train_set.cls_weight()))
 elif args.weight_balance == True and torch.cuda.device_count() > 0:
@@ -164,11 +158,12 @@ elif args.weight_balance == True and torch.cuda.device_count() > 0:
 else:
     criterion = nn.CrossEntropyLoss()
 
+# Sent to device
 if torch.cuda.device_count() > 1:  # multiple GPUs
     model = nn.DataParallel(module=model)
 model = model.to(device)
 criterion = criterion.to(device)    
-    
+
 
 #%% Train the model
 train_evaluate(model, train_loader, valid_loader, optimizer, scheduler, criterion, metrics, args, device)
