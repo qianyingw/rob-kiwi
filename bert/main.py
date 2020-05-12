@@ -66,7 +66,7 @@ if args.net_type.split('_')[0] == "albert":
 
 # Common configs
 config.num_labels = args.num_labels
-config.freeze_model = args.freeze_model
+config.unfreeze = args.unfreeze
 if args.num_hidden_layers: 
     config.num_hidden_layers = args.num_hidden_layers
 if args.num_attention_heads: 

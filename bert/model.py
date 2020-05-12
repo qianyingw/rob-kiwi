@@ -27,15 +27,46 @@ class BertLinear(BertPreTrainedModel):
         # self.fc = nn.Linear(bert_config.hidden_size * bert_config.n_chunks, bert_config.num_labels)
         self.init_weights()
         
-        # Freeze bert
-        if bert_config.freeze_model == "bert":
+        # Default: freeze bert
+        for name, param in self.bert.named_parameters():
+            param.requires_grad = False  
+
+        # Unfreeze layers
+        if bert_config.unfreeze == "embed":
             for name, param in self.bert.named_parameters():
-                param.requires_grad = False     
-        if bert_config.freeze_model == "bert_encoder":
+                if "embeddings" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "embed_enc0":
             for name, param in self.bert.named_parameters():
-                if "encoder" in name:
-                    param.requires_grad = False
-     
+                if "embeddings" in name or "encoder.layer.0" in name:
+                    param.requires_grad = True
+                    
+        if bert_config.unfreeze == "embed_enc0_pooler":
+            for name, param in self.bert.named_parameters():
+                if "embeddings" in name or "encoder.layer.0" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "enc0":
+            for name, param in self.bert.named_parameters():
+                if "encoder.layer.0" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "enc0_pooler":
+            for name, param in self.bert.named_parameters():
+                if "encoder.layer.0" in name or "pooler" in name:
+                    param.requires_grad = True
+        
+        if bert_config.unfreeze == "embed_pooler":
+            for name, param in self.bert.named_parameters():
+                if "embed" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "pooler":
+            for name, param in self.bert.named_parameters():
+                if "pooler" in name:
+                    param.requires_grad = True        
+        
     def forward(self, doc):
         """
         Input:
@@ -90,14 +121,45 @@ class BertLSTM(BertPreTrainedModel):
         self.tanh = nn.Tanh()
         self.init_weights()
         
-        # Freeze bert
-        if bert_config.freeze_model == "bert":
+        # Default: freeze bert
+        for name, param in self.bert.named_parameters():
+            param.requires_grad = False  
+
+        # Unfreeze layers
+        if bert_config.unfreeze == "embed":
             for name, param in self.bert.named_parameters():
-                param.requires_grad = False     
-        if bert_config.freeze_model == "bert_encoder":
+                if "embeddings" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "embed_enc0":
             for name, param in self.bert.named_parameters():
-                if "encoder" in name:
-                    param.requires_grad = False
+                if "embeddings" in name or "encoder.layer.0" in name:
+                    param.requires_grad = True
+                    
+        if bert_config.unfreeze == "embed_enc0_pooler":
+            for name, param in self.bert.named_parameters():
+                if "embeddings" in name or "encoder.layer.0" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "enc0":
+            for name, param in self.bert.named_parameters():
+                if "encoder.layer.0" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "enc0_pooler":
+            for name, param in self.bert.named_parameters():
+                if "encoder.layer.0" in name or "pooler" in name:
+                    param.requires_grad = True
+        
+        if bert_config.unfreeze == "embed_pooler":
+            for name, param in self.bert.named_parameters():
+                if "embed" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "pooler":
+            for name, param in self.bert.named_parameters():
+                if "pooler" in name:
+                    param.requires_grad = True
     
     def forward(self, doc):
         """
@@ -154,14 +216,44 @@ class AlbertLinear(AlbertPreTrainedModel):
         # self.fc = nn.Linear(albert_config.hidden_size * albert_config.n_chunks, albert_config.num_labels)
         self.init_weights()
         
-        # Freeze albert
-        if albert_config.freeze_model == "albert":
+        # Default: freeze albert
+        for name, param in self.albert.named_parameters():
+            param.requires_grad = False  
+
+        # Unfreeze layers
+        if albert_config.unfreeze == "embed":
             for name, param in self.albert.named_parameters():
-                param.requires_grad = False     
-        if albert_config.freeze_model == "albert_encoder":
+                if "embeddings" in name:
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "embed_enc0":
+            for name, param in self.albert.named_parameters():
+                if "embeddings" in name or "encoder" in name:
+                    param.requires_grad = True
+                    
+        if albert_config.unfreeze == "embed_enc0_pooler":
+            for name, param in self.albert.named_parameters():
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "enc0":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name:
-                    param.requires_grad = False
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "enc0_pooler":
+            for name, param in self.albert.named_parameters():
+                if "encoder" in name or "pooler" in name:
+                    param.requires_grad = True
+        
+        if albert_config.unfreeze == "embed_pooler":
+            for name, param in self.albert.named_parameters():
+                if "embed" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "pooler":
+            for name, param in self.albert.named_parameters():
+                if "pooler" in name:
+                    param.requires_grad = True
         
      
     def forward(self, doc):
@@ -215,16 +307,47 @@ class AlbertLSTM(AlbertPreTrainedModel):
         self.fc = nn.Linear(albert_config.hidden_size, albert_config.num_labels)
         self.fc_bn = nn.BatchNorm1d(albert_config.num_labels)
         self.tanh = nn.Tanh()
-        self.init_weights()        
+        self.init_weights()  
+        
+        # Default: freeze albert
+        for name, param in self.albert.named_parameters():
+            param.requires_grad = False  
 
-        # Freeze albert
-        if albert_config.freeze_model == "albert":
+        # Unfreeze layers
+        if albert_config.unfreeze == "embed":
             for name, param in self.albert.named_parameters():
-                param.requires_grad = False     
-        if albert_config.freeze_model == "albert_encoder":
+                if "embeddings" in name:
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "embed_enc0":
+            for name, param in self.albert.named_parameters():
+                if "embeddings" in name or "encoder" in name:
+                    param.requires_grad = True
+                    
+        if albert_config.unfreeze == "embed_enc0_pooler":
+            for name, param in self.albert.named_parameters():
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "enc0":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name:
-                    param.requires_grad = False        
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "enc0_pooler":
+            for name, param in self.albert.named_parameters():
+                if "encoder" in name or "pooler" in name:
+                    param.requires_grad = True
+        
+        if albert_config.unfreeze == "embed_pooler":
+            for name, param in self.albert.named_parameters():
+                if "embed" in name or "pooler" in name:
+                    param.requires_grad = True 
+                    
+        if albert_config.unfreeze == "pooler":
+            for name, param in self.albert.named_parameters():
+                if "pooler" in name:
+                    param.requires_grad = True
+                                   
     
     def forward(self, doc):
         """
