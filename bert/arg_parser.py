@@ -62,7 +62,7 @@ def get_args():
                                  'albert_linmax', 'albert_linavg', 'albert_lstm'], 
                         help="Different network models")
     parser.add_argument('--unfreeze', nargs="?", type=str, default=None, 
-                        choices=[None, 'embed', 'embed_enc0', 'embed_enc0_pooler', 'enc0', 'enc0_pooler', 'embed_pooler', 'pooler'], 
+                        choices=[None, 'embed', 'embed_enc0', 'embed_enc0_pooler', 'enc0', 'enc0_pooler', 'embed_pooler', 'pooler', 'enc-1', 'enc-1_pooler'], 
                         help='Options of unfreeze bert/albert parameters')
     
     parser.add_argument('--weight_balance', nargs="?", type=str2bool, default=True, help='Assign class weights for imbalanced data')

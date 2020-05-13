@@ -65,7 +65,21 @@ class BertLinear(BertPreTrainedModel):
         if bert_config.unfreeze == "pooler":
             for name, param in self.bert.named_parameters():
                 if "pooler" in name:
-                    param.requires_grad = True        
+                    param.requires_grad = True 
+                    
+        if bert_config.unfreeze == "enc-1":
+            n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
+            last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
+            for name, param in self.bert.named_parameters():               
+                if last_layer in name:
+                    param.requires_grad = True
+        
+        if bert_config.unfreeze == "enc-1_pooler":
+            n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
+            last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
+            for name, param in self.bert.named_parameters():               
+                if last_layer in name or "pooler" in name:
+                    param.requires_grad = True
         
     def forward(self, doc):
         """
@@ -159,6 +173,20 @@ class BertLSTM(BertPreTrainedModel):
         if bert_config.unfreeze == "pooler":
             for name, param in self.bert.named_parameters():
                 if "pooler" in name:
+                    param.requires_grad = True
+                    
+        if bert_config.unfreeze == "enc-1":
+            n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
+            last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
+            for name, param in self.bert.named_parameters():               
+                if last_layer in name:
+                    param.requires_grad = True
+        
+        if bert_config.unfreeze == "enc-1_pooler":
+            n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
+            last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
+            for name, param in self.bert.named_parameters():               
+                if last_layer in name or "pooler" in name:
                     param.requires_grad = True
     
     def forward(self, doc):
