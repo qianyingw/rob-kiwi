@@ -130,7 +130,7 @@ class BertLSTM(BertPreTrainedModel):
                             num_layers = 1, dropout = 0, 
                             batch_first = True, bidirectional = False)
         
-        self.fc = nn.Linear(bert_config.hidden_size, bert_config.num_labels)
+        self.fc = nn.Linear(bert_config.hidden_size*3, bert_config.num_labels)
         self.fc_bn = nn.BatchNorm1d(bert_config.num_labels)
         self.tanh = nn.Tanh()
         self.init_weights()
@@ -219,10 +219,14 @@ class BertLSTM(BertPreTrainedModel):
         output, (h_n, c_n) = self.lstm(dp)
         
         
+        # Concat pooling
         # h_n = output[:,-1,].squeeze(1)  # [batch_size, hidden_size]
         h_n = h_n.squeeze(0)  # [batch_size, hidden_size]
+        h_max = torch.max(output, dim=1).values  # [batch_size, hidden_size]
+        h_mean = torch.mean(output, dim=1).values  # [batch_size, hidden_size]
+        out = torch.cat((h_n, h_max, h_mean), dim=1)  # [batch_size, hidden_size*3]
         
-        out = self.fc(h_n)  # [batch_size, num_labels]   
+        out = self.fc(out)  # [batch_size, num_labels]   
         out = self.fc_bn(out)
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
         # out = self.tanh(out)   # [batch_size, num_labels]
