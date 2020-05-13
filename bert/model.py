@@ -223,7 +223,7 @@ class BertLSTM(BertPreTrainedModel):
         # h_n = output[:,-1,].squeeze(1)  # [batch_size, hidden_size]
         h_n = h_n.squeeze(0)  # [batch_size, hidden_size]
         h_max = torch.max(output, dim=1).values  # [batch_size, hidden_size]
-        h_mean = torch.mean(output, dim=1).values  # [batch_size, hidden_size]
+        h_mean = torch.mean(output, dim=1)  # [batch_size, hidden_size]
         out = torch.cat((h_n, h_max, h_mean), dim=1)  # [batch_size, hidden_size*3]
         
         out = self.fc(out)  # [batch_size, num_labels]   
