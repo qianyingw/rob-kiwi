@@ -145,10 +145,11 @@ valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, n
 # Optimizer
 optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
 
-# Learning rate scheduler
+# Slanted triangular Learning rate scheduler
 from transformers import get_linear_schedule_with_warmup
-total_steps = len(train_loader) * args.num_epochs
-scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
+total_steps = len(train_loader) * args.num_epochs // args.accum_step
+warm_steps = int(total_steps * args.warm_frac)
+scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warm_steps, num_training_steps=total_steps)
 
 # Criterion (weight balancing)
 if args.weight_balance == True and torch.cuda.device_count() == 0:
