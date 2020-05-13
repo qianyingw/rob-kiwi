@@ -36,6 +36,7 @@ def get_args():
     parser.add_argument('--train_ratio', nargs="?", type=float, default=0.8, help='Ratio of training set')
     parser.add_argument('--val_ratio', nargs="?", type=float, default=0.1, help='Ratio of validation set')
     parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='AdamW learning rate')
+    parser.add_argument('--warm_frac', nargs="?", type=float, default=0.1, help='Fraction of iterations when lr increased')
     parser.add_argument('--clip', nargs="?", type=float, default=0.1, help='Gradient clipping')
     parser.add_argument('--accum_step', nargs="?", type=int, default=4, help='Number of steps for gradient accumulation')
     
