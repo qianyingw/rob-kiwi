@@ -51,49 +51,42 @@ else:
     device = torch.device('cpu')     
 
 
-#%% Tokenizer & Config
-if args.net_type.split('_')[0] == "bert":
-    # bert tokenizer
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-    # bert configuration
-    config = BertConfig.from_pretrained('bert-base-uncased')  
+#%% Tokenizer & Config & Model
+if args.net_type in ["bert_linear", "bert_lstm"]:
+    # Default: rob/data/pre_wgts/bert_medium/
+    # Tokenizer
+    tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
+    # Config
+    config = BertConfig.from_pretrained(args.wgts_dir)    
+    config.num_labels = args.num_labels
+    config.unfreeze = args.unfreeze
+    config.output_attentions = False
+    config.output_hidden_states = False   
+    if args.num_hidden_layers: 
+        config.num_hidden_layers = args.num_hidden_layers
+    if args.num_attention_heads: 
+        config.num_attention_heads = args.num_attention_heads
+    # Model
+    if args.net_type == "bert_lstm":
+        model = BertLSTM.from_pretrained(args.wgts_dir, config=config)
+    else:
+        model = BertLinear.from_pretrained(args.wgts_dir, config=config)
+        
 
-if args.net_type.split('_')[0] == "albert": 
-    # albert tokenizer
-    tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2', do_lower_case=True)
-    # albert configuration
-    config = AlbertConfig.from_pretrained('albert-base-v2')  # albert-large-v2'
+
+#if args.net_type.split('_')[0] == "bert":
+#    tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  # default: bert_medium
+#    config = BertConfig.from_pretrained(args.wgts_dir)  
+#    model = BertLSTM.from_pretrained('/media/mynewdrive/rob/data/pre_wgts/bert_medium/', config=config)
+#
+#if args.net_type.split('_')[0] == "albert": 
+#    tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2', do_lower_case=True)
+#    config = AlbertConfig.from_pretrained('albert-base-v2')  # albert-large-v2'
 
 # Common configs
-config.num_labels = args.num_labels
-config.unfreeze = args.unfreeze
-if args.num_hidden_layers: 
-    config.num_hidden_layers = args.num_hidden_layers
-if args.num_attention_heads: 
-    config.num_attention_heads = args.num_attention_heads
-if args.hidden_size: 
-    config.hidden_size = args.hidden_size
-config.output_attentions = False
-config.output_hidden_states = False   
-# For BertLinear/AlbertLinear
-if args.net_type.split('_')[1] == "linmax":
-    config.linear_max = True
-else:
-    config.linear_max = False 
+#if args.hidden_size: 
+#    config.hidden_size = args.hidden_size
 
-
-#%% Model  
-if args.net_type in ['bert_linmax', 'bert_linavg']:
-    model = BertLinear(config)
-if args.net_type == 'bert_lstm':
-    model = BertLSTM(config)
-if args.net_type in ['albert_linmax', 'albert_linavg']:
-    model = AlbertLinear(config)  
-if args.net_type == 'albert_lstm':
-    model = AlbertLSTM(config)
-
-
-  
 # Demonstrate some pars
 #print(model)
 #pars = list(model.named_parameters())
@@ -115,10 +108,11 @@ if args.net_type == 'albert_lstm':
     
 n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
 print("\n==== Number of parameters: {} ====\n".format(n_pars))
-print("========== Parameters List ==========\n")
+print("========== Parameters List ==========")
 for p in model.named_parameters():
     if p[1].requires_grad == True:
         print(p[0])
+print("=====================================\n")
 
 #%% Create dataset and data loader  
 train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
@@ -141,7 +135,6 @@ valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, n
 #test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
         
 #%% 
-
 # Optimizer
 optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
 
