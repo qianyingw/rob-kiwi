@@ -102,14 +102,13 @@ class BertLinear(BertPreTrainedModel):
  
                 
         dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
-        # concat = dp.view(batch_size, -1)  # [batch_size, num_chunks*hidden_size]
-        if self.bert.config.linear_max == True:
-            dp = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
-        else:
-            dp = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
-        # dp = dp.sum(dim=1) # [batch_size, hidden_size]
-
-        out = self.fc(dp)  # [batch_size, num_labels]     
+        
+        dp_max = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
+        dp_mean = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
+        # Concat pooling
+        out = torch.cat((dp_max, dp_mean), dim=1)  # [batch_size, hidden_size*2]
+        
+        out = self.fc(out)  # [batch_size, num_labels]     
         out = self.fc_bn(out)
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
              
