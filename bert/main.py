@@ -89,30 +89,20 @@ if args.net_type in ["bert_linear", "bert_lstm"]:
 
 # Demonstrate some pars
 #print(model)
-#pars = list(model.named_parameters())
-#print('\nBERT has {} named parameters.\n'.format(len(pars)))
-#print('==== Embedding Layer ====\n')
-#for p in pars[0:5]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-#    
-#print('\n==== First Transformer ====\n')
-#for p in pars[5:21]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-#
-#print('\n==== Output Layer ====\n')
-#for p in pars[-4:]:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
 
-#for p in pars:
-#    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size())))) 
-    
+n_pars = sum(p.numel() for p in model.parameters())
+print("\n========== All parameters: {} ===============================".format(n_pars))
+for p in model.named_parameters():
+    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+print("=====================================================================\n")
+
 n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
-print("\n==== Number of parameters: {} ====\n".format(n_pars))
-print("========== Parameters List ==========")
+print("========== Trainable parameters: {} ===========================".format(n_pars))
 for p in model.named_parameters():
     if p[1].requires_grad == True:
-        print(p[0])
-print("=====================================\n")
+        print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))        
+print("====================================================================\n")
+
 
 #%% Create dataset and data loader  
 train_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item, 
