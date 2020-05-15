@@ -22,7 +22,7 @@ class BertLinear(BertPreTrainedModel):
         self.bert = BertModel(bert_config)
         
         self.dropout = nn.Dropout(bert_config.hidden_dropout_prob)
-        self.fc = nn.Linear(bert_config.hidden_size, bert_config.num_labels)
+        self.fc = nn.Linear(bert_config.hidden_size*2, bert_config.num_labels)
         self.fc_bn = nn.BatchNorm1d(bert_config.num_labels)
         # self.fc = nn.Linear(bert_config.hidden_size * bert_config.n_chunks, bert_config.num_labels)
         self.init_weights()
