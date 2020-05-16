@@ -32,7 +32,7 @@ def get_args():
     # Experiments
     parser.add_argument('--seed', nargs="?", type=int, default=1234, help='Seed for random number generator')
     parser.add_argument('--batch_size', nargs="?", type=int, default=4, help='Batch size')
-    parser.add_argument('--num_epochs', nargs="?", type=int, default=2, help='Number of epochs')    
+    parser.add_argument('--num_epochs', nargs="?", type=int, default=4, help='Number of epochs')    
     parser.add_argument('--train_ratio', nargs="?", type=float, default=0.8, help='Ratio of training set')
     parser.add_argument('--val_ratio', nargs="?", type=float, default=0.1, help='Ratio of validation set')
     parser.add_argument('--lr', nargs="?", type=float, default=2e-5, help='AdamW learning rate')

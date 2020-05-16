@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-#os.chdir('/home/qwang/rob/rob-kiwi/bert')
+#os.chdir('/home/qwang/rob/rob-kiwi/transfo')
 
 import random
 
