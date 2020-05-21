@@ -10,8 +10,8 @@ import torch
 import torch.nn as nn
 from typing import Callable
 
-from activations import get_activation
-from configuration_utils import PretrainedConfig
+from hgf.activations import get_activation
+from hgf.configuration_utils import PretrainedConfig
 
         
 
