@@ -60,8 +60,9 @@ def get_args():
                         help='Risk of bias item')
 
     # Model
-    parser.add_argument('--net_type', nargs="?", type=str, default='bert_lstm', 
-                        choices=['bert_linear', 'bert_lstm', 'albert_linear', 'albert_lstm'], 
+    parser.add_argument('--net_type', nargs="?", type=str, default='xlnet_linear', 
+                        choices=['bert_linear', 'bert_lstm', 'albert_linear', 'albert_lstm',
+                                 'xlnet_linear', 'xlnet_lstm', 'xlnet_conv'], 
                         help="Different network models")
     parser.add_argument('--unfreeze', nargs="?", type=str, default=None, 
                         choices=[None, 'embed', 'embed_enc0', 'embed_enc0_pooler', 'enc0', 'enc0_pooler', 'embed_pooler', 'pooler', 'enc-1', 'enc-1_pooler'], 
@@ -74,13 +75,14 @@ def get_args():
     parser.add_argument('--cut_head_ratio', nargs="?", type=float, default=0.1, help='Ratio of tokens cut from head')
     parser.add_argument('--cut_tail_ratio', nargs="?", type=float, default=0.1, help='Ratio of tokens cut from tail')
     
-    # BERT/ALBERT
+    # BERT/ALBERT/XLNet
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
-    parser.add_argument('--max_n_chunk', nargs="?", type=int, default=20, help='Max number of text chunks')
+    parser.add_argument('--max_n_chunk', nargs="?", type=int, default=10000, help='Max number of text chunks (or tokens when using xlnet)')
     parser.add_argument('--num_hidden_layers', nargs="?", type=int, default=None, help='Number of encoder layers')
     parser.add_argument('--num_attention_heads', nargs="?", type=int, default=None, help='Number of attention heads')
     parser.add_argument('--hidden_size', nargs="?", type=int, default=None, help='Number of hidden units')
-    
+    parser.add_argument('--num_filters', nargs="?", type=int, default=100, help='Number of filters for each filter size (conv)')   
+    parser.add_argument('--filter_sizes', nargs="?", type=str, default='3,4,5', help='Conv filter sizes')
    
     args = parser.parse_args()
     
