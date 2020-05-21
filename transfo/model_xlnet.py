@@ -14,6 +14,60 @@ import torch.nn.functional as F
 
 from hgf.modeling_utils import SequenceSummary
 
+
+#%%
+class XLNetLinear(XLNetPreTrainedModel):
+    
+    def __init__(self, config: XLNetConfig):
+        super().__init__(config)
+        self.num_labels = config.num_labels
+
+        self.xlnet = XLNetModel(config)
+        self.seq_summary = SequenceSummary(config)
+        
+        self.dropout = nn.Dropout(config.dropout)
+        
+        self.fc = nn.Linear(config.hidden_size, config.num_labels)
+        self.fc_bn = nn.BatchNorm1d(config.num_labels)
+
+        self.init_weights()
+        
+        # Default: freeze xlnet
+        for name, param in self.xlnet.named_parameters():
+            param.requires_grad = False 
+
+
+    def forward(self, doc):
+        """     
+        Input:
+            doc: [batch_size, seq_len, 2]           
+        Returns:
+            out: [batch_size, output_dim]  
+
+        """
+        # input_ids / attnention_mask: [batch_size, seq_len]
+        xln_out = self.xlnet(input_ids = doc[:,:,0], 
+                             attention_mask = doc[:,:,1])
+        
+        last_layer_hidden = xln_out[0]  # [batch_size, seq_len, hidden_size]
+
+        # SequenceSummary computes a single vector summary of a sequence hidden states according to various possibilities:
+        #    - 'last' => [default] take the last token hidden state (like XLNet)
+        #    - 'first' => take the first token hidden state (like Bert)
+        #    - 'mean' => take the mean of all tokens hidden states
+        #    - 'cls_index' => supply a Tensor of classification token position (GPT/GPT-2)
+        seq_sum = self.seq_summary(last_layer_hidden)  # [batch_size, hidden_size]
+        
+        dp = self.dropout(seq_sum)  # [batch_size, hidden_size]
+        
+        out = self.fc(dp)  # [batch_size, num_labels]   
+        out = self.fc_bn(out)
+        out = F.softmax(out, dim=1)  # [batch_size, num_labels]
+
+        return out
+
+
+
 #%%
 class XLNetLSTM(XLNetPreTrainedModel):
     
@@ -24,7 +78,7 @@ class XLNetLSTM(XLNetPreTrainedModel):
         self.xlnet = XLNetModel(config)
         self.seq_summary = SequenceSummary(config)
         
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
         
         self.lstm = nn.LSTM(input_size = config.hidden_size, hidden_size = config.hidden_size,
                             num_layers = 1, dropout = 0, 
@@ -34,6 +88,10 @@ class XLNetLSTM(XLNetPreTrainedModel):
         self.fc_bn = nn.BatchNorm1d(config.num_labels)
 
         self.init_weights()
+        
+        # Default: freeze xlnet
+        for name, param in self.xlnet.named_parameters():
+            param.requires_grad = False
 
 
     def forward(self, doc):
@@ -70,53 +128,6 @@ class XLNetLSTM(XLNetPreTrainedModel):
         
         return out
         
-    
-#%%
-class XLNetLinear(XLNetPreTrainedModel):
-    
-    def __init__(self, config: XLNetConfig):
-        super().__init__(config)
-        self.num_labels = config.num_labels
-
-        self.xlnet = XLNetModel(config)
-        self.seq_summary = SequenceSummary(config)
-        
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        
-        self.fc = nn.Linear(config.hidden_size, config.num_labels)
-        self.fc_bn = nn.BatchNorm1d(config.num_labels)
-
-        self.init_weights()
-
-
-    def forward(self, doc):
-        """     
-        Input:
-            doc: [batch_size, seq_len, 2]           
-        Returns:
-            out: [batch_size, output_dim]  
-
-        """
-        # input_ids / attnention_mask: [batch_size, seq_len]
-        xln_out = self.xlnet(input_ids = doc[:,:,0], 
-                             attention_mask = doc[:,:,1])
-        
-        last_layer_hidden = xln_out[0]  # [batch_size, seq_len, hidden_size]
-
-        # SequenceSummary computes a single vector summary of a sequence hidden states according to various possibilities:
-        #    - 'last' => [default] take the last token hidden state (like XLNet)
-        #    - 'first' => take the first token hidden state (like Bert)
-        #    - 'mean' => take the mean of all tokens hidden states
-        #    - 'cls_index' => supply a Tensor of classification token position (GPT/GPT-2)
-        seq_sum = self.seq_summary(last_layer_hidden)  # [batch_size, hidden_size]
-        
-        dp = self.dropout(seq_sum)  # [batch_size, hidden_size]
-        
-        out = self.fc(dp)  # [batch_size, num_labels]   
-        out = self.fc_bn(out)
-        out = F.softmax(out, dim=1)  # [batch_size, num_labels]
-
-        return out
 
 
 #%%
@@ -129,16 +140,18 @@ class XLNetConv(XLNetPreTrainedModel):
         self.xlnet = XLNetModel(config)
         self.seq_summary = SequenceSummary(config)
         
-        self.convs = nn.ModuleList([nn.Conv2d(in_channels = 1,
-                                              out_channels = config.n_filters,
+        self.convs = nn.ModuleList([nn.Conv2d(in_channels = 1, out_channels = config.n_filters,
                                               kernel_size = (fsize, config.hidden_size)) for fsize in config.filter_sizes])   
           
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        
+        self.dropout = nn.Dropout(config.dropout)    
         self.fc = nn.Linear(config.hidden_size, config.num_labels)
         self.fc_bn = nn.BatchNorm1d(config.num_labels)
 
         self.init_weights()
+        
+        # Default: freeze xlnet
+        for name, param in self.xlnet.named_parameters():
+            param.requires_grad = False
 
 
     def forward(self, doc):
