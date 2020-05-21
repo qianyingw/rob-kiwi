@@ -148,8 +148,8 @@ class DocDataset(Dataset):
             attn_masks = [1] * len(token_ids) 
             # token_type_ids = [0] * len(token_ids)
                          
-            doc = torch.cat((torch.LongTensor(token_ids).unsqueeze(0),
-                             torch.LongTensor(attn_masks).unsqueeze(0)), dim=0)
+            doc = torch.cat((torch.LongTensor(token_ids).unsqueeze(1),
+                             torch.LongTensor(attn_masks).unsqueeze(1)), dim=1)
         
         # Label tensor
         label = self.info_df.loc[idx, self.rob_item]
@@ -186,11 +186,12 @@ class PadDoc:
 
 
       
-#%% Instance   
+#%% Instance
 #data_set = DocDataset(info_file = '/media/mynewdrive/rob/data/rob_info_a.pkl',
 #                       pkl_dir = '/media/mynewdrive/rob/data/rob_str',
 #                       rob_item = 'RandomizationTreatmentControl',
 #                       max_chunk_len = 512, 
+#                       max_n_chunk = 10000,
 #                       cut_head_ratio = 0.1,
 #                       cut_tail_ratio = 0.1,
 #                       group = 'train')  # 'valid', 'test'        
@@ -218,7 +219,6 @@ class PadDoc:
 ## DataLoader
 #from torch.utils.data import DataLoader
 #data_loader = DataLoader(data_set, batch_size=16, shuffle=True, num_workers=4, collate_fn=PadDoc())
-#
 #
 #batch = next(iter(data_loader))
 #doc_batch = batch[0]; print(doc_batch.size())   
