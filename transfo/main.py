@@ -18,12 +18,14 @@ from torch.utils.data import DataLoader
 
 from transformers import BertConfig, BertTokenizer, AdamW
 from transformers import AlbertConfig, AlbertTokenizer
+from transformers import XLNetConfig, XLNetTokenizer
 
 from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
 
 from model import BertLinear, BertLSTM, AlbertLinear, AlbertLSTM
+from model_xlnet import XLNetLinear, XLNetLSTM, XLNetConv
 from train import train_evaluate
 
 
@@ -62,17 +64,39 @@ if args.net_type in ["bert_linear", "bert_lstm"]:
     config.unfreeze = args.unfreeze
     config.output_attentions = False
     config.output_hidden_states = False   
-    if args.num_hidden_layers: 
-        config.num_hidden_layers = args.num_hidden_layers
-    if args.num_attention_heads: 
-        config.num_attention_heads = args.num_attention_heads
+    
+    if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
+    if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
+    
     # Model
     if args.net_type == "bert_lstm":
         model = BertLSTM.from_pretrained(args.wgts_dir, config=config)
     else:
         model = BertLinear.from_pretrained(args.wgts_dir, config=config)
-        
+    
+    
+if args.net_type in ["xlnet_linear", "xlnet_lstm", "xlnet_conv"]:
+    tokenizer = XLNetTokenizer.from_pretrained("xlnet-base-cased")  
+    # Config
+    config = XLNetConfig.from_pretrained("xlnet-base-cased")    
+    config.num_labels = args.num_labels
+    # config.unfreeze = args.unfreeze   
+    config.n_layer = args.num_hidden_layers if args.num_hidden_layers else 12
+    config.n_head = args.num_attention_heads if args.num_attention_heads else 12
+    config.d_model = args.hidden_size if args.hidden_size else 768
 
+    # Model
+    if args.net_type == "xlnet_linear":
+        model = XLNetLinear.from_pretrained("xlnet-base-cased", config=config)      
+    elif args.net_type == "xlnet_lstm":
+        model = XLNetLSTM.from_pretrained("xlnet-base-cased", config=config)
+    else: # args.net_type == "xlnet_conv"
+        sizes = args.filter_sizes.split(',')
+        config.filter_sizes = [int(s) for s in sizes]
+        config.n_filters = args.num_filters
+        model = XLNetConv.from_pretrained("xlnet-base-cased", config=config)
+        
+    
 
 #if args.net_type.split('_')[0] == "bert":
 #    tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  # default: bert_medium
