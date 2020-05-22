@@ -13,18 +13,19 @@ import torch.nn.functional as F
 from transformers import BertPreTrainedModel, BertConfig, BertModel
 from transformers import AlbertPreTrainedModel, AlbertConfig, AlbertModel
 
+from hgf.modeling_utils import SequenceSummary
+
 #%%
 class BertLinear(BertPreTrainedModel):
 
-    def __init__(self, bert_config: BertConfig):
-        super().__init__(bert_config)
+    def __init__(self, config: BertConfig):
+        super().__init__(config)
         
-        self.bert = BertModel(bert_config)
-        
-        self.dropout = nn.Dropout(bert_config.hidden_dropout_prob)
-        self.fc = nn.Linear(bert_config.hidden_size*2, bert_config.num_labels)
-        self.fc_bn = nn.BatchNorm1d(bert_config.num_labels)
-        # self.fc = nn.Linear(bert_config.hidden_size * bert_config.n_chunks, bert_config.num_labels)
+        self.bert = BertModel(config)
+        self.seq_summary = SequenceSummary(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.fc = nn.Linear(config.hidden_size, config.num_labels)
+        self.fc_bn = nn.BatchNorm1d(config.num_labels)
         self.init_weights()
         
         # Default: freeze bert
@@ -32,49 +33,49 @@ class BertLinear(BertPreTrainedModel):
             param.requires_grad = False  
 
         # Unfreeze layers
-        if bert_config.unfreeze == "embed":
+        if config.unfreeze == "embed":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "embed_enc0":
+        if config.unfreeze == "embed_enc0":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name or "encoder.layer.0" in name:
                     param.requires_grad = True
                     
-        if bert_config.unfreeze == "embed_enc0_pooler":
+        if config.unfreeze == "embed_enc0_pooler":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name or "encoder.layer.0" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "enc0":
+        if config.unfreeze == "enc0":
             for name, param in self.bert.named_parameters():
                 if "encoder.layer.0" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "enc0_pooler":
+        if config.unfreeze == "enc0_pooler":
             for name, param in self.bert.named_parameters():
                 if "encoder.layer.0" in name or "pooler" in name:
                     param.requires_grad = True
         
-        if bert_config.unfreeze == "embed_pooler":
+        if config.unfreeze == "embed_pooler":
             for name, param in self.bert.named_parameters():
                 if "embed" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "pooler":
+        if config.unfreeze == "pooler":
             for name, param in self.bert.named_parameters():
                 if "pooler" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "enc-1":
+        if config.unfreeze == "enc-1":
             n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
             last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
             for name, param in self.bert.named_parameters():               
                 if last_layer in name:
                     param.requires_grad = True
         
-        if bert_config.unfreeze == "enc-1_pooler":
+        if config.unfreeze == "enc-1_pooler":
             n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
             last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
             for name, param in self.bert.named_parameters():               
@@ -99,16 +100,18 @@ class BertLinear(BertPreTrainedModel):
                                attention_mask = doc[i+1,:,1], 
                                token_type_ids = doc[i+1,:,2])[1]
             pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
+        # pooled: [batch_size, num_chunks, hidden_size]
  
-                
-        dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]  
         
-        dp_max = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
-        dp_mean = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
+        pool_summary = self.seq_summary(pooled)  # [batch_size, hidden_size]     
+        dp = self.dropout(pool_summary)    
+        
+        # dp_max = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
+        # dp_mean = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
         # Concat pooling
-        out = torch.cat((dp_max, dp_mean), dim=1)  # [batch_size, hidden_size*2]
+        # out = torch.cat((dp_max, dp_mean), dim=1)  # [batch_size, hidden_size*2]
         
-        out = self.fc(out)  # [batch_size, num_labels]     
+        out = self.fc(dp)  # [batch_size, num_labels]     
         out = self.fc_bn(out)
         out = F.softmax(out, dim=1)  # [batch_size, num_labels]
              
@@ -118,19 +121,19 @@ class BertLinear(BertPreTrainedModel):
 #%%
 class BertLSTM(BertPreTrainedModel):
 
-    def __init__(self, bert_config: BertConfig):
-        super().__init__(bert_config)
+    def __init__(self, config: BertConfig):
+        super().__init__(config)
         
-        self.bert = BertModel(bert_config)
+        self.bert = BertModel(config)
         
-        self.dropout = nn.Dropout(bert_config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
                 
-        self.lstm = nn.LSTM(input_size = bert_config.hidden_size, hidden_size = bert_config.hidden_size,
+        self.lstm = nn.LSTM(input_size = config.hidden_size, hidden_size = config.hidden_size,
                             num_layers = 1, dropout = 0, 
                             batch_first = True, bidirectional = False)
         
-        self.fc = nn.Linear(bert_config.hidden_size*3, bert_config.num_labels)
-        self.fc_bn = nn.BatchNorm1d(bert_config.num_labels)
+        self.fc = nn.Linear(config.hidden_size*3, config.num_labels)
+        self.fc_bn = nn.BatchNorm1d(config.num_labels)
         self.tanh = nn.Tanh()
         self.init_weights()
         
@@ -139,49 +142,49 @@ class BertLSTM(BertPreTrainedModel):
             param.requires_grad = False  
 
         # Unfreeze layers
-        if bert_config.unfreeze == "embed":
+        if config.unfreeze == "embed":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "embed_enc0":
+        if config.unfreeze == "embed_enc0":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name or "encoder.layer.0" in name:
                     param.requires_grad = True
                     
-        if bert_config.unfreeze == "embed_enc0_pooler":
+        if config.unfreeze == "embed_enc0_pooler":
             for name, param in self.bert.named_parameters():
                 if "embeddings" in name or "encoder.layer.0" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "enc0":
+        if config.unfreeze == "enc0":
             for name, param in self.bert.named_parameters():
                 if "encoder.layer.0" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "enc0_pooler":
+        if config.unfreeze == "enc0_pooler":
             for name, param in self.bert.named_parameters():
                 if "encoder.layer.0" in name or "pooler" in name:
                     param.requires_grad = True
         
-        if bert_config.unfreeze == "embed_pooler":
+        if config.unfreeze == "embed_pooler":
             for name, param in self.bert.named_parameters():
                 if "embed" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if bert_config.unfreeze == "pooler":
+        if config.unfreeze == "pooler":
             for name, param in self.bert.named_parameters():
                 if "pooler" in name:
                     param.requires_grad = True
                     
-        if bert_config.unfreeze == "enc-1":
+        if config.unfreeze == "enc-1":
             n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
             last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
             for name, param in self.bert.named_parameters():               
                 if last_layer in name:
                     param.requires_grad = True
         
-        if bert_config.unfreeze == "enc-1_pooler":
+        if config.unfreeze == "enc-1_pooler":
             n_layer = sum([1 for name, _ in self.bert.named_parameters() if "encoder.layer" in name])
             last_layer = "encoder.layer." + str(int(n_layer/16-1))  # each enc layer has 16 pars
             for name, param in self.bert.named_parameters():               
@@ -211,7 +214,7 @@ class BertLSTM(BertPreTrainedModel):
             pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
             
         
-        dp = self.dropout(pooled)  # [batch_size, num_chunks, bert_hidden_size]
+        dp = self.dropout(pooled)  # [batch_size, num_chunks, hidden_size]
         # output: [batch_size, num_chunks, n_directions*hidden_size], output features from last layer for each t
         # h_n: [n_layers*n_directions, batch_size, hidden_size], hidden state for t=seq_len
         # c_n: [n_layers*n_directions, batch_size, hidden_size], cell state fir t=seq_len
@@ -236,15 +239,15 @@ class BertLSTM(BertPreTrainedModel):
 #%%
 class AlbertLinear(AlbertPreTrainedModel):
 
-    def __init__(self, albert_config: AlbertConfig):
-        super().__init__(albert_config)
+    def __init__(self, config: AlbertConfig):
+        super().__init__(config)
         
-        self.albert = AlbertModel(albert_config)
+        self.albert = AlbertModel(config)
         
-        self.dropout = nn.Dropout(albert_config.hidden_dropout_prob)
-        self.fc = nn.Linear(albert_config.hidden_size, albert_config.num_labels)
-        self.fc_bn = nn.BatchNorm1d(albert_config.num_labels)
-        # self.fc = nn.Linear(albert_config.hidden_size * albert_config.n_chunks, albert_config.num_labels)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.fc = nn.Linear(config.hidden_size, config.num_labels)
+        self.fc_bn = nn.BatchNorm1d(config.num_labels)
+        # self.fc = nn.Linear(config.hidden_size * config.n_chunks, config.num_labels)
         self.init_weights()
         
         # Default: freeze albert
@@ -252,36 +255,36 @@ class AlbertLinear(AlbertPreTrainedModel):
             param.requires_grad = False  
 
         # Unfreeze layers
-        if albert_config.unfreeze == "embed":
+        if config.unfreeze == "embed":
             for name, param in self.albert.named_parameters():
                 if "embeddings" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "embed_enc0":
+        if config.unfreeze == "embed_enc0":
             for name, param in self.albert.named_parameters():
                 if "embeddings" in name or "encoder" in name:
                     param.requires_grad = True
                     
-        if albert_config.unfreeze == "embed_enc0_pooler":
+        if config.unfreeze == "embed_enc0_pooler":
             for name, param in self.albert.named_parameters():
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "enc0":
+        if config.unfreeze == "enc0":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "enc0_pooler":
+        if config.unfreeze == "enc0_pooler":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name or "pooler" in name:
                     param.requires_grad = True
         
-        if albert_config.unfreeze == "embed_pooler":
+        if config.unfreeze == "embed_pooler":
             for name, param in self.albert.named_parameters():
                 if "embed" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "pooler":
+        if config.unfreeze == "pooler":
             for name, param in self.albert.named_parameters():
                 if "pooler" in name:
                     param.requires_grad = True
@@ -324,19 +327,19 @@ class AlbertLinear(AlbertPreTrainedModel):
 #%%
 class AlbertLSTM(AlbertPreTrainedModel):
 
-    def __init__(self, albert_config: AlbertConfig):
-        super().__init__(albert_config)
+    def __init__(self, config: AlbertConfig):
+        super().__init__(config)
         
-        self.albert = AlbertModel(albert_config)
+        self.albert = AlbertModel(config)
         
-        self.dropout = nn.Dropout(albert_config.hidden_dropout_prob)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
                 
-        self.lstm = nn.LSTM(input_size = albert_config.hidden_size, hidden_size = albert_config.hidden_size,
+        self.lstm = nn.LSTM(input_size = config.hidden_size, hidden_size = config.hidden_size,
                             num_layers = 1, dropout = 0, 
                             batch_first = True, bidirectional = False)
         
-        self.fc = nn.Linear(albert_config.hidden_size, albert_config.num_labels)
-        self.fc_bn = nn.BatchNorm1d(albert_config.num_labels)
+        self.fc = nn.Linear(config.hidden_size, config.num_labels)
+        self.fc_bn = nn.BatchNorm1d(config.num_labels)
         self.tanh = nn.Tanh()
         self.init_weights()  
         
@@ -345,36 +348,36 @@ class AlbertLSTM(AlbertPreTrainedModel):
             param.requires_grad = False  
 
         # Unfreeze layers
-        if albert_config.unfreeze == "embed":
+        if config.unfreeze == "embed":
             for name, param in self.albert.named_parameters():
                 if "embeddings" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "embed_enc0":
+        if config.unfreeze == "embed_enc0":
             for name, param in self.albert.named_parameters():
                 if "embeddings" in name or "encoder" in name:
                     param.requires_grad = True
                     
-        if albert_config.unfreeze == "embed_enc0_pooler":
+        if config.unfreeze == "embed_enc0_pooler":
             for name, param in self.albert.named_parameters():
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "enc0":
+        if config.unfreeze == "enc0":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "enc0_pooler":
+        if config.unfreeze == "enc0_pooler":
             for name, param in self.albert.named_parameters():
                 if "encoder" in name or "pooler" in name:
                     param.requires_grad = True
         
-        if albert_config.unfreeze == "embed_pooler":
+        if config.unfreeze == "embed_pooler":
             for name, param in self.albert.named_parameters():
                 if "embed" in name or "pooler" in name:
                     param.requires_grad = True 
                     
-        if albert_config.unfreeze == "pooler":
+        if config.unfreeze == "pooler":
             for name, param in self.albert.named_parameters():
                 if "pooler" in name:
                     param.requires_grad = True
