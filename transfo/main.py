@@ -76,9 +76,11 @@ if args.net_type in ["bert_linear", "bert_lstm"]:
     
     
 if args.net_type in ["xlnet_linear", "xlnet_lstm", "xlnet_conv"]:
-    tokenizer = XLNetTokenizer.from_pretrained("xlnet-base-cased")  
+    
+    # Tokenizer
+    tokenizer = XLNetTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
     # Config
-    config = XLNetConfig.from_pretrained("xlnet-base-cased")    
+    config = XLNetConfig.from_pretrained(args.wgts_dir)    
     config.num_labels = args.num_labels
     # config.unfreeze = args.unfreeze   
     config.n_layer = args.num_hidden_layers if args.num_hidden_layers else 12
@@ -87,14 +89,14 @@ if args.net_type in ["xlnet_linear", "xlnet_lstm", "xlnet_conv"]:
 
     # Model
     if args.net_type == "xlnet_linear":
-        model = XLNetLinear.from_pretrained("xlnet-base-cased", config=config)      
+        model = XLNetLinear.from_pretrained(args.wgts_dir, config=config)      
     elif args.net_type == "xlnet_lstm":
-        model = XLNetLSTM.from_pretrained("xlnet-base-cased", config=config)
+        model = XLNetLSTM.from_pretrained(args.wgts_dir, config=config)
     else: # args.net_type == "xlnet_conv"
         sizes = args.filter_sizes.split(',')
         config.filter_sizes = [int(s) for s in sizes]
         config.n_filters = args.num_filters
-        model = XLNetConv.from_pretrained("xlnet-base-cased", config=config)
+        model = XLNetConv.from_pretrained(args.wgts_dir, config=config)
         
     
 
