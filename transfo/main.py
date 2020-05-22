@@ -59,11 +59,11 @@ if args.net_type in ["bert_linear", "bert_lstm"]:
     # Tokenizer
     tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
     # Config
-    config = BertConfig.from_pretrained(args.wgts_dir)    
+    config = BertConfig.from_pretrained(args.wgts_dir)  
+    config.summary_type = 'first'  # for SequenceSummary
     config.num_labels = args.num_labels
     config.unfreeze = args.unfreeze
-    config.output_attentions = False
-    config.output_hidden_states = False   
+      
     
     if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
     if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
