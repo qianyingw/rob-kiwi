@@ -47,7 +47,7 @@ class DocDataset(Dataset):
 #        info_df = info_df[:100]
 #        ###############################    
         if group == 'train':
-            print('Overal data size: {}'.format(len(info_df)))
+            print('Overall data size: {}'.format(len(info_df)))
                
         if group:
             info_df = info_df[info_df['partition']==group]
