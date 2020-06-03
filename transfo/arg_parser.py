@@ -86,7 +86,7 @@ def get_args():
     parser.add_argument('--num_attention_heads', nargs="?", type=int, default=None, help='Number of attention heads')
     parser.add_argument('--hidden_size', nargs="?", type=int, default=None, help='Number of hidden units')
     
-    parser.add_argument('--pool_method', nargs="?", type=str, default='mean', 
+    parser.add_argument('--pool_method', nargs="?", type=str, default=None, 
                         choices=[None, 'mean', 'max', 'mean_max', 'cls'],
                         help='Method of pooling tokens within each chunk')
     parser.add_argument('--pool_layers', nargs="?", type=int, default=-8, help='Number of last few layers will be pooled')
