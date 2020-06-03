@@ -46,8 +46,8 @@ class DocDataset(Dataset):
 #        info_df = sklearn.utils.shuffle(info_df)
 #        info_df = info_df[:100]
 #        ###############################    
-        
-        print('Overal data size: {}'.format(len(info_df)))
+        if group == 'train':
+            print('Overal data size: {}'.format(len(info_df)))
                
         if group:
             info_df = info_df[info_df['partition']==group]
