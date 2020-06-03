@@ -13,17 +13,25 @@ import torch.nn.functional as F
 from transformers import BertPreTrainedModel, BertConfig, BertModel
 from transformers import AlbertPreTrainedModel, AlbertConfig, AlbertModel
 
-from hgf.modeling_utils import SequenceSummary
+# from hgf.modeling_utils import SequenceSummary
 
 #%%
-class BertLinear(BertPreTrainedModel):
+class BertPoolLSTM(BertPreTrainedModel):
 
     def __init__(self, config: BertConfig):
         super().__init__(config)
         
+        self.config = config
         self.bert = BertModel(config)
-        self.seq_summary = SequenceSummary(config)
+
+        # self.seq_summary = SequenceSummary(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        
+        
+        self.lstm = nn.LSTM(input_size = config.hidden_size, hidden_size = config.hidden_size,
+                            num_layers = 1, dropout = 0, 
+                            batch_first = True, bidirectional = False)
+             
         self.fc = nn.Linear(config.hidden_size, config.num_labels)
         self.fc_bn = nn.BatchNorm1d(config.num_labels)
         self.init_weights()
@@ -32,37 +40,7 @@ class BertLinear(BertPreTrainedModel):
         for name, param in self.bert.named_parameters():
             param.requires_grad = False  
 
-        # Unfreeze layers
-        if config.unfreeze == "embed":
-            for name, param in self.bert.named_parameters():
-                if "embeddings" in name:
-                    param.requires_grad = True 
-                    
-        if config.unfreeze == "embed_enc0":
-            for name, param in self.bert.named_parameters():
-                if "embeddings" in name or "encoder.layer.0" in name:
-                    param.requires_grad = True
-                    
-        if config.unfreeze == "embed_enc0_pooler":
-            for name, param in self.bert.named_parameters():
-                if "embeddings" in name or "encoder.layer.0" in name or "pooler" in name:
-                    param.requires_grad = True 
-                    
-        if config.unfreeze == "enc0":
-            for name, param in self.bert.named_parameters():
-                if "encoder.layer.0" in name:
-                    param.requires_grad = True 
-                    
-        if config.unfreeze == "enc0_pooler":
-            for name, param in self.bert.named_parameters():
-                if "encoder.layer.0" in name or "pooler" in name:
-                    param.requires_grad = True
-        
-        if config.unfreeze == "embed_pooler":
-            for name, param in self.bert.named_parameters():
-                if "embed" in name or "pooler" in name:
-                    param.requires_grad = True 
-                    
+        # Unfreeze layers                   
         if config.unfreeze == "pooler":
             for name, param in self.bert.named_parameters():
                 if "pooler" in name:
@@ -85,35 +63,62 @@ class BertLinear(BertPreTrainedModel):
     def forward(self, doc):
         """
         Input:
-            doc: [batch_size, num_chunks, 3, max_chunk_len]            
+            doc: [batch_size, n_chunks, 3, max_chunk_len]     
+                 n_chunks is the number of chunks within the batch (same for each doc after PadDoc)
         Returns:
             out: [batch_size, output_dim]       
             
         """    
-        batch_size = doc.shape[0]        
+        batch_size = doc.shape[0]          
         
-        pooled = self.bert(input_ids = doc[0,:,0], 
-                           attention_mask = doc[0,:,1], 
-                           token_type_ids = doc[0,:,2])[1].unsqueeze(0) 
-        for i in range(batch_size-1):
-            pool_i = self.bert(input_ids = doc[i+1,:,0], 
-                               attention_mask = doc[i+1,:,1], 
-                               token_type_ids = doc[i+1,:,2])[1]
-            pooled = torch.cat((pooled, pool_i.unsqueeze(0)), dim=0)
-        # pooled: [batch_size, num_chunks, hidden_size]
- 
+        hidden_pooled_layers = []
         
-        pool_summary = self.seq_summary(pooled)  # [batch_size, hidden_size]     
-        dp = self.dropout(pool_summary)    
+        for k in range(batch_size):
+            # Each doc is considered as a special 'batch' and each chunk is an element of the special 'bert_batch'
+            # n_chunks is the temporary 'bert_batch_size', max_chunk_len corresponds to 'seq_len'
+            bert_output_k = self.bert(input_ids = doc[k,:,0],  # [n_chunks, max_chunk_len]
+                                      attention_mask = doc[k,:,1], 
+                                      token_type_ids = doc[k,:,2])
+            # pooled_k = bert_output_k[1].unsqueeze(0) 
+            hidden_states_k = bert_output_k[2]  # each element in the tuple: [n_chunks, max_chunk_len, hidden_size]
+             
+            # Average pooling over last [pool_layers] layers        
+            hidden_list_k = list(hidden_states_k[self.config.pool_layers:])
+            hidden_stack_k = torch.stack(hidden_list_k)  # [n_pooled_layers, n_chunks, max_chunk_len, hidden_size]                    
+            hidden_pooled_layers_k = torch.mean(hidden_stack_k, dim=0)  # [n_chunks, max_chunk_len, hidden_size]
+            hidden_pooled_layers.append(hidden_pooled_layers_k)
+    
         
-        # dp_max = torch.max(dp, dim=1).values  # [batch_size, hidden_size]
-        # dp_mean = torch.mean(dp, dim=1)  # [batch_size, hidden_size]
-        # Concat pooling
-        # out = torch.cat((dp_max, dp_mean), dim=1)  # [batch_size, hidden_size*2]
-        
-        out = self.fc(dp)  # [batch_size, num_labels]     
+        hidden_pooled_layers = torch.stack(hidden_pooled_layers)  # [batch_size, n_chunks, max_chunk_len, hidden_size]
+        # Pooling within each chunk (over 512 word tokens of individual chunk)
+        if self.config.pool_method == 'mean':
+            hidden_pooled = torch.mean(hidden_pooled_layers, dim=2)  # [batch_size, n_chunks, hidden_size]
+        elif self.config.pool_method == 'max':
+            hidden_pooled = torch.max(hidden_pooled_layers, dim=2).values  # [batch_size, n_chunks, hidden_size]
+        elif self.config.pool_method == 'mean_max':
+            hidden_pooled_mean = torch.mean(hidden_pooled_layers, dim=2)               # [batch_size, n_chunks, hidden_size]
+            hidden_pooled_max = torch.max(hidden_pooled_layers, dim=2).values          # [batch_size, n_chunks, hidden_size]
+            hidden_pooled = torch.cat((hidden_pooled_mean, hidden_pooled_max), dim=1)  # [batch_size, n_chunks*2, hidden_size]
+        elif self.config.pool_method == 'cls':
+            hidden_pooled = hidden_pooled_layers[:,:,0,:]  # [batch_size, n_chunks, hidden_size]
+        else: # pool_method is None
+            hidden_pooled = hidden_pooled_layers.view(batch_size, -1, self.config.hidden_size) # [batch_size, n_chunks*max_chunk_len, hidden_size]
+            
+    
+       
+        dp = self.dropout(hidden_pooled)   # [batch_size, ?, hidden_size]
+        # ? can be n_chunks, n_chunks*2 or n_chunks*max_chunk_len)      
+        # output: [batch_size, ?, n_directions*hidden_size], output features from last layer for each t
+        # h_n: [n_layers*n_directions, batch_size, hidden_size], hidden state for t=seq_len
+        # c_n: [n_layers*n_directions, batch_size, hidden_size], cell state fir t=seq_len
+        output, (h_n, c_n) = self.lstm(dp)
+           
+        h_n = h_n.squeeze(0)  # [batch_size, hidden_size]
+
+    
+        out = self.fc(h_n)  # [batch_size, num_labels]   
         out = self.fc_bn(out)
-        out = F.softmax(out, dim=1)  # [batch_size, num_labels]
+        out = F.softmax(out, dim=1)  # [batch_size, num_labels]      
              
         return out
 

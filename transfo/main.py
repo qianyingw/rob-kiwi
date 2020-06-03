@@ -24,7 +24,7 @@ from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
 
-from model import BertLinear, BertLSTM, AlbertLinear, AlbertLSTM
+from model import BertPoolLSTM, BertLSTM, AlbertLinear, AlbertLSTM
 from model_xlnet import XLNetLinear, XLNetLSTM, XLNetConv
 from train import train_evaluate
 
@@ -54,49 +54,69 @@ else:
 
 
 #%% Tokenizer & Config & Model
-if args.net_type in ["bert_linear", "bert_lstm"]:
+if args.net_type == "bert_pool_lstm":
     # Default: rob/data/pre_wgts/bert_medium/
     # Tokenizer
     tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
     # Config
     config = BertConfig.from_pretrained(args.wgts_dir)  
-    config.summary_type = 'first'  # for SequenceSummary
+    config.output_hidden_states = True
     config.num_labels = args.num_labels
     config.unfreeze = args.unfreeze
+    config.pool_method = args.pool_method
+    config.pool_layers = args.pool_layers
       
-    
     if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
     if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
     
-    # Model
-    if args.net_type == "bert_lstm":
-        model = BertLSTM.from_pretrained(args.wgts_dir, config=config)
-    else:
-        model = BertLinear.from_pretrained(args.wgts_dir, config=config)
-    
-    
-if args.net_type in ["xlnet_linear", "xlnet_lstm", "xlnet_conv"]:
-    
-    # Tokenizer
-    tokenizer = XLNetTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
-    # Config
-    config = XLNetConfig.from_pretrained(args.wgts_dir)    
-    config.num_labels = args.num_labels
-    # config.unfreeze = args.unfreeze   
-    config.n_layer = args.num_hidden_layers if args.num_hidden_layers else 12
-    config.n_head = args.num_attention_heads if args.num_attention_heads else 12
-    config.d_model = args.hidden_size if args.hidden_size else 768
+    model = BertPoolLSTM.from_pretrained(args.wgts_dir, config=config)
 
-    # Model
-    if args.net_type == "xlnet_linear":
-        model = XLNetLinear.from_pretrained(args.wgts_dir, config=config)      
-    elif args.net_type == "xlnet_lstm":
-        model = XLNetLSTM.from_pretrained(args.wgts_dir, config=config)
-    else: # args.net_type == "xlnet_conv"
-        sizes = args.filter_sizes.split(',')
-        config.filter_sizes = [int(s) for s in sizes]
-        config.n_filters = args.num_filters
-        model = XLNetConv.from_pretrained(args.wgts_dir, config=config)
+    
+
+
+# if args.net_type in ["bert_linear", "bert_lstm"]:
+#     # Default: rob/data/pre_wgts/bert_medium/
+#     # Tokenizer
+#     tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
+#     # Config
+#     config = BertConfig.from_pretrained(args.wgts_dir)  
+#     config.summary_type = 'first'  # for SequenceSummary
+#     config.num_labels = args.num_labels
+#     config.unfreeze = args.unfreeze
+      
+    
+#     if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
+#     if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
+    
+#     # Model
+#     if args.net_type == "bert_lstm":
+#         model = BertLSTM.from_pretrained(args.wgts_dir, config=config)
+#     else:
+#         model = BertLinear.from_pretrained(args.wgts_dir, config=config)
+    
+    
+# if args.net_type in ["xlnet_linear", "xlnet_lstm", "xlnet_conv"]:
+    
+#     # Tokenizer
+#     tokenizer = XLNetTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
+#     # Config
+#     config = XLNetConfig.from_pretrained(args.wgts_dir)    
+#     config.num_labels = args.num_labels
+#     # config.unfreeze = args.unfreeze   
+#     config.n_layer = args.num_hidden_layers if args.num_hidden_layers else 12
+#     config.n_head = args.num_attention_heads if args.num_attention_heads else 12
+#     config.d_model = args.hidden_size if args.hidden_size else 768
+
+#     # Model
+#     if args.net_type == "xlnet_linear":
+#         model = XLNetLinear.from_pretrained(args.wgts_dir, config=config)      
+#     elif args.net_type == "xlnet_lstm":
+#         model = XLNetLSTM.from_pretrained(args.wgts_dir, config=config)
+#     else: # args.net_type == "xlnet_conv"
+#         sizes = args.filter_sizes.split(',')
+#         config.filter_sizes = [int(s) for s in sizes]
+#         config.n_filters = args.num_filters
+#         model = XLNetConv.from_pretrained(args.wgts_dir, config=config)
         
     
 
