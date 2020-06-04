@@ -143,10 +143,10 @@ if args.net_type in ["bert_pool_lstm", "bert_pool_conv"]:
 #print(model)
 
 n_pars = sum(p.numel() for p in model.parameters())
-print("\n========== All parameters: {} ===============================".format(n_pars))
-for p in model.named_parameters():
-    print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
-print("=====================================================================\n")
+# print("\n========== All parameters: {} ===============================".format(n_pars))
+# for p in model.named_parameters():
+#     print("{:<55} {:>12}".format(p[0], str(tuple(p[1].size()))))
+# print("=====================================================================\n")
 
 n_pars = sum(p.numel() for p in model.parameters() if p.requires_grad == True)
 print("========== Trainable parameters: {} ===========================".format(n_pars))
