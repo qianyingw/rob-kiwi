@@ -60,10 +60,9 @@ def get_args():
                         help='Risk of bias item')
 
     # Model
-    parser.add_argument('--net_type', nargs="?", type=str, default='bert_pool_lstm', 
-                        choices=['bert_pool_lstm',
-                                 'bert_linear', 'bert_lstm', 'albert_linear', 'albert_lstm',
-                                 'xlnet_linear', 'xlnet_lstm', 'xlnet_conv'], 
+    parser.add_argument('--net_type', nargs="?", type=str, default='bert_pool_conv', 
+                        choices=['bert_pool_lstm', 'bert_pool_conv'],
+                                 # 'bert_linear', 'bert_lstm', 'albert_linear', 'albert_lstm', 'xlnet_linear', 'xlnet_lstm', 'xlnet_conv'], 
                         help="Different network models")
     parser.add_argument('--unfreeze', nargs="?", type=str, default=None, 
                         choices=[None, 'pooler', 'enc-1', 'enc-1_pooler'], 
@@ -91,7 +90,7 @@ def get_args():
                         help='Method of pooling tokens within each chunk')
     parser.add_argument('--pool_layers', nargs="?", type=int, default=-8, help='Number of last few layers will be pooled')
     
-    parser.add_argument('--num_filters', nargs="?", type=int, default=100, help='Number of filters for each filter size (conv)')   
+    parser.add_argument('--num_filters', nargs="?", type=int, default=10, help='Number of filters for each filter size (conv)')   
     parser.add_argument('--filter_sizes', nargs="?", type=str, default='3,4,5', help='Conv filter sizes')
    
     args = parser.parse_args()
