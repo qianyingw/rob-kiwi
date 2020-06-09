@@ -89,7 +89,7 @@ def evaluate(model, data_loader, criterion, metrics, device, threshold):
 
 #%% train_eval
     
-def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, criterion, metrics, args, device, restore_file=None):
+def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, criterion, metrics, args, device):
     """
     
     """
@@ -97,14 +97,14 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     if os.path.exists(args.exp_dir) == False:
         os.makedirs(args.exp_dir)     
     
-    if restore_file is not None:
-        restore_path = os.path.join(args.exp_dir, restore_file + '.pth.tar')
+    if args.restore_file is not None:
+        restore_path = os.path.join(args.exp_dir, args.restore_file + '.pth.tar')
         utils.load_checkpoint(restore_path, model, optimizer)
-    
-
-    
+           
     # Create args and output dictionary (for json output)
     output_dict = {'args': vars(args), 'prfs': {}}
+    
+    max_valid_f1 = -float('inf')
     
     for epoch in range(args.num_epochs):   
         train_scores = train(model, train_iterator, optimizer, scheduler, criterion, metrics, device, args.clip, args.accum_step, args.threshold)
@@ -114,20 +114,16 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
         output_dict['prfs'][str('train_'+str(epoch+1))] = train_scores
         output_dict['prfs'][str('valid_'+str(epoch+1))] = valid_scores
         
-   
-#        is_best = (valid_scores['loss']-min_valid_loss <= args.stop_c1) and (max_valid_f1-valid_scores['f1'] <= args.stop_c2)
-#        if is_best == True:       
-#            utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_scores.json'))
-#        
-#        # Save model
-#        if args.save_model == True:
-#            utils.save_checkpoint({'epoch': epoch+1,
-#                                   'state_dict': model.state_dict(),
-#                                   'optim_Dict': optimizer.state_dict()},
-#                                   is_best = is_best, checkdir = args.exp_dir)
+        is_best = valid_scores['f1'] > max_valid_f1
+        if is_best == True:       
+            utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_scores.json'))
+        
+        # Save weights
+        utils.save_checkpoint({'epoch': epoch + 1,
+                               'state_dict': model.state_dict(),
+                               'optim_dict': optimizer.state_dict()},
+                               is_best = is_best, checkdir = args.exp_dir)
 
-        # Save the latest valid scores in exp_dir
-        # utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'last_val_scores.json'))
 
         print("\n\nEpoch {}/{}...".format(epoch+1, args.num_epochs))                       
         print('\n[Train] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | rec: {3:.2f}% | prec: {4:.2f}% | spec: {5:.2f}%'.format(
@@ -141,6 +137,4 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     with open(prfs_path, 'w') as fout:
         json.dump(output_dict, fout, indent=4)
         
-    # Save performance plot    
-    # utils.plot_prfs(prfs_json_path=prfs_path)
     

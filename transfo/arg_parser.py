@@ -45,7 +45,8 @@ def get_args():
     parser.add_argument('--wgts_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/pre_wgts/bert_medium", help='BERT pre-trained wgts folder')
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
-    parser.add_argument('--exp_dir', nargs="?", type=str, default="/home/qwang/rob/bert", help='Folder of the experiment')
+    parser.add_argument('--exp_dir', nargs="?", type=str, default="/home/qwang/rob/ckp_exp", help='Folder of the experiment')
+    parser.add_argument('--restore_file', nargs="?", type=str, default=None, help='name of the file in --exp_dir containing weights to load')
     parser.add_argument('--save_model', nargs="?", type=str2bool, default=False, help='Save model.pth.tar with best loss')
 
     # RoB item

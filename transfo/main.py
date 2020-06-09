@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-#os.chdir('/home/qwang/rob/rob-kiwi/transfo')
+# os.chdir('/home/qwang/rob/rob-kiwi/transfo')
 
 import random
 
@@ -182,6 +182,7 @@ optimizer = AdamW(model.parameters(), lr = args.lr, eps = 1e-8)
 
 # Slanted triangular Learning rate scheduler
 from transformers import get_linear_schedule_with_warmup
+# total_steps = len(train_loader) * 9 // args.accum_step  # change n_epochs to total #epochs for resuming training
 total_steps = len(train_loader) * args.num_epochs // args.accum_step
 warm_steps = int(total_steps * args.warm_frac)
 scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warm_steps, num_training_steps=total_steps)
