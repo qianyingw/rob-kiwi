@@ -42,10 +42,10 @@ class DocDataset(Dataset):
         
         info_df = pd.read_pickle(info_file)
         
-#        ########## test only ########## 
-#        info_df = sklearn.utils.shuffle(info_df)
-#        info_df = info_df[:100]
-#        ###############################    
+        # ########## test only ########## 
+        # info_df = sklearn.utils.shuffle(info_df, random_state=1234)
+        # info_df = info_df[:20]
+        # ###############################    
         if group == 'train':
             print('Overall data size: {}'.format(len(info_df)))
                
