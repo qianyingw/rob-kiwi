@@ -7,7 +7,7 @@ Created on Mon Apr 27 11:14:20 2020
 """
 
 import os
-# os.chdir('/home/qwang/rob/rob-kiwi/transfo')
+os.chdir('/home/qwang/rob/rob-kiwi/transfo')
 
 import random
 
@@ -19,12 +19,14 @@ from torch.utils.data import DataLoader
 from transformers import BertConfig, BertTokenizer, AdamW
 from transformers import AlbertConfig, AlbertTokenizer
 from transformers import XLNetConfig, XLNetTokenizer
+from transformers import LongformerConfig, LongformerTokenizer, LongformerModel
 
 from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
 
 from model import BertPoolLSTM, BertPoolConv # BertLSTM, AlbertLinear, AlbertLSTM
+from model_lfmr import LongformerLinear
 # from model_xlnet import XLNetLinear, XLNetLSTM, XLNetConv
 from train import train_evaluate
 
@@ -77,6 +79,21 @@ if args.net_type in ["bert_pool_lstm", "bert_pool_conv"]:
         config.filter_sizes = [int(s) for s in sizes]
         model = BertPoolConv.from_pretrained(args.wgts_dir, config=config)
 
+if args.net_type in ["longformer_linear"]:
+    # Default: rob/data/pre_wgts/longformer_base/
+    # Tokenizer
+    tokenizer = LongformerTokenizer.from_pretrained('allenai/longformer-base-4096')
+    # Config
+    config = LongformerConfig.from_pretrained('allenai/longformer-base-4096')  
+    config.output_hidden_states = True
+    config.num_labels = args.num_labels
+    # config.unfreeze = args.unfreeze
+    # config.pool_method = args.pool_method
+    # config.pool_layers = args.pool_layers     
+    if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
+    if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
+    # Model
+    model = LongformerLinear.from_pretrained(args.wgts_dir)
 
 
 
@@ -186,6 +203,7 @@ from transformers import get_linear_schedule_with_warmup
 total_steps = len(train_loader) * args.num_epochs // args.accum_step
 warm_steps = int(total_steps * args.warm_frac)
 scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warm_steps, num_training_steps=total_steps)
+
 
 # Criterion (weight balancing)
 if args.weight_balance == True and torch.cuda.device_count() == 0:

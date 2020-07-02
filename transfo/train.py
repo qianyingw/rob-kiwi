@@ -100,6 +100,7 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     if args.restore_file is not None:
         restore_path = os.path.join(args.exp_dir, args.restore_file + '.pth.tar')
         utils.load_checkpoint(restore_path, model, optimizer)
+        #checkfile = utils.load_checkpoint(restore_path, model, optimizer)
            
     # Create args and output dictionary (for json output)
     output_dict = {'args': vars(args), 'prfs': {}}
@@ -122,6 +123,7 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
         utils.save_checkpoint({'epoch': epoch + 1,
                                'state_dict': model.state_dict(),
                                'optim_dict': optimizer.state_dict()},
+                               #'scheduler': },
                                is_best = is_best, checkdir = args.exp_dir)
 
 

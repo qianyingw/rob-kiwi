@@ -42,7 +42,7 @@ def get_args():
     
     parser.add_argument('--info_file', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_info_a.pkl", help='Path of info pickle file')
     parser.add_argument('--pkl_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_str", help='Directory of pickle files')
-    parser.add_argument('--wgts_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/pre_wgts/bert_medium", help='BERT pre-trained wgts folder')
+    parser.add_argument('--wgts_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/pre_wgts/longformer_base", help='BERT pre-trained wgts folder')
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
     parser.add_argument('--exp_dir', nargs="?", type=str, default="/home/qwang/rob/ckp_exp", help='Folder of the experiment')
@@ -61,8 +61,8 @@ def get_args():
                         help='Risk of bias item')
 
     # Model
-    parser.add_argument('--net_type', nargs="?", type=str, default='bert_pool_conv', 
-                        choices=['bert_pool_lstm', 'bert_pool_conv'],
+    parser.add_argument('--net_type', nargs="?", type=str, default='longformer_linear', 
+                        choices=['bert_pool_lstm', 'bert_pool_conv', 'longformer_linaer'],
                                  # 'bert_linear', 'bert_lstm', 'albert_linear', 'albert_lstm', 'xlnet_linear', 'xlnet_lstm', 'xlnet_conv'], 
                         help="Different network models")
     parser.add_argument('--unfreeze', nargs="?", type=str, default=None, 
@@ -80,7 +80,7 @@ def get_args():
     
     # BERT/ALBERT/XLNet
     parser.add_argument('--num_labels', nargs="?", type=int, default=2, help='Number of output labels')
-    parser.add_argument('--max_n_chunk', nargs="?", type=int, default=20, help='Max number of text chunks (or tokens when using xlnet)')
+    parser.add_argument('--max_n_chunk', nargs="?", type=int, default=3000, help='Max number of text chunks (or tokens when using xlnet)')
     parser.add_argument('--max_chunk_len', nargs="?", type=int, default=512, help='Max context window size for bert')
     parser.add_argument('--num_hidden_layers', nargs="?", type=int, default=None, help='Number of encoder layers')
     parser.add_argument('--num_attention_heads', nargs="?", type=int, default=None, help='Number of attention heads')

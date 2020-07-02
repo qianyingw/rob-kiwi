@@ -150,7 +150,40 @@ class DocDataset(Dataset):
                          
             doc = torch.cat((torch.LongTensor(token_ids).unsqueeze(1),
                              torch.LongTensor(attn_masks).unsqueeze(1)), dim=1)
-        
+
+        ###### Longformer input tokenization and formatting ######  
+        elif type(self.tokenizer) == transformers.tokenization_longformer.LongformerTokenizer:
+            # Split sentence lists to tokens
+            tokens = []
+            for l in sent_ls:
+                tokens = tokens + l[0].split(" ")
+                        
+            # Limit number of tokens
+            # 'max_n_chunk' to BERT is 'max_n_token' to xlnet/longformer (just for args simplification)
+            n_tokens = len(tokens)  
+            if n_tokens > self.max_n_chunk and self.max_n_chunk > 20:
+                tokens = tokens[:self.max_n_chunk] 
+                n_tokens = self.max_n_chunk
+            assert n_tokens <= self.max_n_chunk, "The document is too large. Try to increase cut_head/tail_ratio."      
+            
+            
+            # Convert tokens back to plain text
+            text = " ".join(tokens)
+            # Convert text to tokens
+            token_ids = self.tokenizer.encode(text)           
+            # tokens.append("<cls>")
+                 
+            
+            attn_masks = [1] * len(token_ids) 
+            global_attn_masks = [0] * len(token_ids)
+            global_attn_masks[0] = 1  # <cls> token should be given global attention
+            # token_type_ids = [0] * len(token_ids)
+                         
+            doc = torch.cat((torch.LongTensor(token_ids).unsqueeze(1),
+                             torch.LongTensor(attn_masks).unsqueeze(1), 
+                             torch.LongTensor(global_attn_masks).unsqueeze(1)), dim=1)
+          
+            
         # Label tensor
         label = self.info_df.loc[idx, self.rob_item]
         label = torch.LongTensor([label])  
@@ -171,6 +204,7 @@ class PadDoc:
         # x[0].shape
         #       BERT: [num_chunks, 3, max_chunk_len]
         #       XLNet: [n_tokens, 2]
+        #       Longformer: [n_tokens, 3]
         sorted_batch = sorted(batch, key=lambda x: x[0].shape[0], reverse=True)  # 
         
         # Pad doc within batch       		
@@ -197,39 +231,39 @@ class PadDoc:
 #                       group = 'train')  # 'valid', 'test'        
 #
 #
-#len(data_set)  # 6272
-#data_set.cls_weight()
-#idx = 0
-#doc = data_set[idx][0]
-#doc[0]   # 1st chunk
-#doc[-1]  # last chunk
-#
-#
-#n_chk = []
-#for i in range(len(data_set)):
-#    output = data_set[i][0]
-#    n_chk.append(output.size()[0])
-#    if i % 1000 == 0:
-#        print(output.size())
-#
-## max num_chunk in 23 (train), 21 (valid), 25 (test)
-#max(n_chk)  
-#
-#
-## DataLoader
-#from torch.utils.data import DataLoader
-#data_loader = DataLoader(data_set, batch_size=16, shuffle=True, num_workers=4, collate_fn=PadDoc())
-#
-#batch = next(iter(data_loader))
-#doc_batch = batch[0]; print(doc_batch.size())   
-#label_batch = batch[1]; print(label_batch.size())    
-#len_batch = batch[2]; print(len_batch)  
-#
-#doc_batch.size()  # [batch_size, num_chunks, 3, max_chunk_len]
-#label_batch.size()  # [batch_size]
-#len_batch.size()  # [batch_size]
-#
-#for i, batch in enumerate(data_loader):
-#    if i % 50 == 0:
-#        print("[batch {}] Doc: {}, Label: {}".format(i, batch[0].size(), batch[1].size()))
+# len(data_set)  # 6272
+# data_set.cls_weight()
+# idx = 0
+# doc = data_set[idx][0]
+# doc[0]   # 1st chunk
+# doc[-1]  # last chunk
+
+
+# n_chk = []
+# for i in range(len(data_set)):
+#     output = data_set[i][0]
+#     n_chk.append(output.size()[0])
+#     if i % 1000 == 0:
+#         print(output.size())
+
+# max num_chunk in 23 (train), 21 (valid), 25 (test)
+# max(n_chk)  
+
+
+# # DataLoader
+# from torch.utils.data import DataLoader
+# data_loader = DataLoader(data_set, batch_size=16, shuffle=True, num_workers=4, collate_fn=PadDoc())
+
+# batch = next(iter(data_loader))
+# doc_batch = batch[0]; print(doc_batch.size())   
+# label_batch = batch[1]; print(label_batch.size())    
+# len_batch = batch[2]; print(len_batch)  
+
+# doc_batch.size()  # [batch_size, num_chunks, 3, max_chunk_len]
+# label_batch.size()  # [batch_size]
+# len_batch.size()  # [batch_size]
+
+# for i, batch in enumerate(data_loader):
+#     if i % 50 == 0:
+#         print("[batch {}] Doc: {}, Label: {}".format(i, batch[0].size(), batch[1].size()))
 
