@@ -115,16 +115,18 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
         output_dict['prfs'][str('train_'+str(epoch+1))] = train_scores
         output_dict['prfs'][str('valid_'+str(epoch+1))] = valid_scores
         
+        
         is_best = valid_scores['f1'] > max_valid_f1
-        if is_best == True:       
+        if is_best == True:
+            max_valid_f1 = valid_scores['f1']
             utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_scores.json'))
         
         # Save weights
-        utils.save_checkpoint({'epoch': epoch + 1,
-                               'state_dict': model.state_dict(),
-                               'optim_dict': optimizer.state_dict()},
-                               #'scheduler': },
-                               is_best = is_best, checkdir = args.exp_dir)
+        # utils.save_checkpoint({'epoch': epoch + 1,
+        #                        'state_dict': model.state_dict(),
+        #                        'optim_dict': optimizer.state_dict()},
+        #                        #'scheduler': },
+        #                        is_best = is_best, checkdir = args.exp_dir)
 
 
         print("\n\nEpoch {}/{}...".format(epoch+1, args.num_epochs))                       
