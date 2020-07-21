@@ -28,7 +28,7 @@ from data_loader import DocDataset, PadDoc
 from model import BertPoolLSTM, BertPoolConv # BertLSTM, AlbertLinear, AlbertLSTM
 from model_lfmr import LongformerLinear
 # from model_xlnet import XLNetLinear, XLNetLSTM, XLNetConv
-from train import train_evaluate
+from train import train_evaluate, test
 
 
 #%% Setting
@@ -187,11 +187,12 @@ valid_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
 valid_loader = DataLoader(valid_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
 
-#test_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item,  
-#                      max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
-#                      cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
-#                      group='test', tokenizer=bert_tokenizer)
-#test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
+if args.save_model:
+    test_set = DocDataset(info_file=args.info_file, pkl_dir=args.pkl_dir, rob_item=args.rob_item,  
+                          max_chunk_len=args.max_chunk_len, max_n_chunk=args.max_n_chunk,
+                          cut_head_ratio=args.cut_head_ratio, cut_tail_ratio=args.cut_tail_ratio,
+                          group='test', tokenizer=tokenizer)
+    test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=True, num_workers=0, collate_fn=PadDoc())
         
 #%% 
 # Optimizer
@@ -223,9 +224,8 @@ criterion = criterion.to(device)
 #%% Train the model
 train_evaluate(model, train_loader, valid_loader, optimizer, scheduler, criterion, metrics, args, device)
 
-
-    
-    
-    
+#%% Test
+if args.save_model:
+    test_scores = test(model, test_loader, criterion, metrics, args, device, restore_file = 'best')   
     
     

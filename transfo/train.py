@@ -121,13 +121,12 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
             max_valid_f1 = valid_scores['f1']
             utils.save_dict_to_json(valid_scores, os.path.join(args.exp_dir, 'best_val_scores.json'))
         
-        # Save weights
-        # utils.save_checkpoint({'epoch': epoch + 1,
-        #                        'state_dict': model.state_dict(),
-        #                        'optim_dict': optimizer.state_dict()},
-        #                        #'scheduler': },
-        #                        is_best = is_best, checkdir = args.exp_dir)
-
+        # Save model
+        if args.save_model == True:
+            utils.save_checkpoint({'epoch': epoch+1,
+                                   'state_dict': model.state_dict(),
+                                   'optim_Dict': optimizer.state_dict()},
+                                   is_best = is_best, checkdir = args.exp_dir)
 
         print("\n\nEpoch {}/{}...".format(epoch+1, args.num_epochs))                       
         print('\n[Train] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | rec: {3:.2f}% | prec: {4:.2f}% | spec: {5:.2f}%'.format(
@@ -141,4 +140,16 @@ def train_evaluate(model, train_iterator, valid_iterator, optimizer, scheduler, 
     with open(prfs_path, 'w') as fout:
         json.dump(output_dict, fout, indent=4)
         
+
+#%%
+# def evaluate(model, data_loader, criterion, metrics, device, threshold):
+def test(model, test_loader, criterion, metrics, args, device, restore_file):   
+     
+    utils.load_checkpoint(os.path.join(args.exp_dir, restore_file + '.pth.tar'), model) 
+    test_scores = evaluate(model, test_loader, criterion, metrics, device, args.threshold)
+    save_path = os.path.join(args.exp_dir, "test_scores.json")
+    utils.save_dict_to_json(test_scores, save_path)  
+    print('\n[Test] loss: {0:.3f} | acc: {1:.2f}% | f1: {2:.2f}% | recall: {3:.2f}% | precision: {4:.2f}% | specificity: {5:.2f}%'.format(
+            test_scores['loss'], test_scores['accuracy']*100, test_scores['f1']*100, test_scores['recall']*100, test_scores['precision']*100, test_scores['specificity']*100))
     
+    return test_scores
