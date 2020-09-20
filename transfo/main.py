@@ -25,7 +25,7 @@ from utils import metrics
 from arg_parser import get_args
 from data_loader import DocDataset, PadDoc
 
-from model import BertPoolLSTM, BertPoolConv # BertLSTM, AlbertLinear, AlbertLSTM
+from model import BertPoolLSTM, BertPoolConv, BertPoolLinear # AlbertLinear, AlbertLSTM
 from model_lfmr import LongformerLinear
 # from model_xlnet import XLNetLinear, XLNetLSTM, XLNetConv
 from train import train_evaluate, test
@@ -56,7 +56,7 @@ else:
 
 
 #%% Tokenizer & Config & Model
-if args.net_type in ["bert_pool_lstm", "bert_pool_conv"]:
+if args.net_type in ["bert_pool_lstm", "bert_pool_conv", "bert_pool_linear"]:
     # Default: rob/data/pre_wgts/bert_medium/
     # Tokenizer
     tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
@@ -65,8 +65,8 @@ if args.net_type in ["bert_pool_lstm", "bert_pool_conv"]:
     config.output_hidden_states = True
     config.num_labels = args.num_labels
     config.unfreeze = args.unfreeze
-    config.pool_method = args.pool_method
     config.pool_layers = args.pool_layers
+    config.pool_method = args.pool_method
       
     if args.num_hidden_layers:  config.num_hidden_layers = args.num_hidden_layers
     if args.num_attention_heads:  config.num_attention_heads = args.num_attention_heads
@@ -78,6 +78,9 @@ if args.net_type in ["bert_pool_lstm", "bert_pool_conv"]:
         sizes = args.filter_sizes.split(',')
         config.filter_sizes = [int(s) for s in sizes]
         model = BertPoolConv.from_pretrained(args.wgts_dir, config=config)
+    if args.net_type == "bert_pool_linear":
+        config.pool_method_chunks = args.pool_method_chunks
+        model = BertPoolLinear.from_pretrained(args.wgts_dir, config=config)
 
 if args.net_type in ["longformer_linear"]:
     # Default: rob/data/pre_wgts/longformer_base/
