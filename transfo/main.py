@@ -58,9 +58,11 @@ else:
 #%% Tokenizer & Config & Model
 if args.net_type in ["bert_pool_lstm", "bert_pool_conv", "bert_pool_linear"]:
     # Default: rob/data/pre_wgts/biobert
-    if os.path.basename(args.wgts_dir) == "pubmed_full":
+    if args.wgts_dir == "biobert":
+        args.wgts_dir = "dmis-lab/biobert-v1.1"
+    if args.wgts_dir == "pubmed-full":
         args.wgts_dir = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext"
-    if os.path.basename(args.wgts_dir) == "pubmed_abs":
+    if args.wgts_dir == "pubmed-abs":
         args.wgts_dir = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
     
     # Tokenizer
