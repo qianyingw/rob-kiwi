@@ -17,9 +17,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from transformers import BertConfig, BertTokenizer, AdamW
-from transformers import AlbertConfig, AlbertTokenizer
-from transformers import XLNetConfig, XLNetTokenizer
-from transformers import LongformerConfig, LongformerTokenizer, LongformerModel
+# from transformers import AlbertConfig, AlbertTokenizer
+# from transformers import XLNetConfig, XLNetTokenizer
+from transformers import LongformerConfig, LongformerTokenizer
 
 from utils import metrics
 from arg_parser import get_args
@@ -57,7 +57,12 @@ else:
 
 #%% Tokenizer & Config & Model
 if args.net_type in ["bert_pool_lstm", "bert_pool_conv", "bert_pool_linear"]:
-    # Default: rob/data/pre_wgts/bert_medium/
+    # Default: rob/data/pre_wgts/biobert
+    if os.path.basename(args.wgts_dir) == "pubmed_full":
+        args.wgts_dir = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext"
+    if os.path.basename(args.wgts_dir) == "pubmed_abs":
+        args.wgts_dir = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
+    
     # Tokenizer
     tokenizer = BertTokenizer.from_pretrained(args.wgts_dir, do_lower_case=True)  
     # Config
