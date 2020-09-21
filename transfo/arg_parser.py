@@ -42,7 +42,7 @@ def get_args():
     
     parser.add_argument('--info_file', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_info_a.pkl", help='Path of info pickle file')
     parser.add_argument('--pkl_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/rob_str", help='Directory of pickle files')
-    parser.add_argument('--wgts_dir', nargs="?", type=str, default="/media/mynewdrive/rob/data/pre_wgts/biobert", help='BERT pre-trained wgts folder')
+    parser.add_argument('--wgts_dir', nargs="?", type=str, default="pubmed-abs", help='BERT pre-trained wgts folder')
     
     parser.add_argument('--args_json_path', nargs="?", type=str, default=None, help='Path of argument json file')
     parser.add_argument('--exp_dir', nargs="?", type=str, default="/home/qwang/rob/kiwi_exp", help='Folder of the experiment')
